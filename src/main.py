@@ -6,7 +6,8 @@ import realmconnector
 import gameconnector
 
 
-async def run(cfg):
+async def run():
+    cfg = config.Config()
     host, port = cfg.parse_realm_list()
     logging.info(f'Connecting to {host}:{port}')
     reader, writer = await asyncio.open_connection(host, port)
@@ -20,8 +21,6 @@ async def run(cfg):
 
 
 if __name__ == '__main__':
-    logger = logging.getLogger('logger')
     logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.DEBUG)
-    logger.info('Running PyWowChat')
-    cfg = config.Config()
-    asyncio.run(run(cfg))
+    logging.info('Running PyWowChat')
+    asyncio.run(run())

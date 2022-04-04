@@ -15,15 +15,13 @@ class GameConnector(connector.Connector):
         logging.info(f'Connecting to realm: {self.realm["name"]}')
         self.reader, self.writer = await asyncio.open_connection(self.realm["host"], self.realm["port"])
         data = await self.reader.read(64)
-        packet = self.handle_game_packet(self.decode(data))
-        # await self.send(packet)
+        packet = self.assign_packet_handler(self.decode(data))
+        #await self.send(packet)
         self.writer.close()
 
     def decode(self, data):
         packet = connector.Packet(None, None)
         return packet
 
-    def handle_game_packet(self, packet):
-        match packet:
-            case _:
-                return 1
+    def assign_packet_handler(self, packet):
+        return packet

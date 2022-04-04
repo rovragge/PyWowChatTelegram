@@ -163,11 +163,7 @@ class RealmConnector(connector.Connector):
         correct_realm = tuple(filter(lambda r: r['name'].lower() == config_realm.lower(), realms))[0]
         if not correct_realm:
             logging.error(f'Realm {config_realm} not found!')
-            logging.info('Possible realms:')
-            for realm in realms:
-                logging.info(realm)
         else:
-            logging.debug(f'realm found: {correct_realm}')
             correct_realm['session_key'] = int.to_bytes(self.srp_handler.K, 40, 'little')
             return correct_realm
 
@@ -196,6 +192,10 @@ class RealmConnector(connector.Connector):
             else:
                 realm['build_info'] = None
             realms.append(realm)
+        string = 'Available realms:' + ''.join(
+            [f'\n\t{realm["name"]} {"PvP" if realm["is_pvp"] else "PvE"} - {realm["host"]}:{realm["port"]}'
+             for realm in realms])
+        logging.debug(string)
         return realms
 
     @staticmethod

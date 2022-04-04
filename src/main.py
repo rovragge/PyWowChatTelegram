@@ -21,7 +21,7 @@ async def run(cfg, logger):
 
 if __name__ == '__main__':
     logger = logging.getLogger('logger')
-    logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
+    logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
     logger.info('Running PyWowChat')
     cfg = config.Config()
     asyncio.run(run(cfg, logger))

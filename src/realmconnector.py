@@ -208,7 +208,7 @@ class RealmConnector:
             for realm in realms:
                 logging.info(realm)
         else:
-            logging.info(f'Found realm {correct_realm["name"]}')
+            logging.debug(f'realm found: {correct_realm}')
             correct_realm['session_key'] = int.to_bytes(self.srp_handler.K, 40, 'little')
             return correct_realm
 

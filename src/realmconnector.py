@@ -147,11 +147,11 @@ class RealmConnector:
         g = int.from_bytes(byte_buff.array(g_length), 'little')
         n_length = byte_buff.get(1)
         N = int.from_bytes(byte_buff.array(n_length), 'little')
-        salt = byte_buff.array(32)
+        salt = int.from_bytes(byte_buff.array(32), 'little')
         unk_3 = byte_buff.array(16)
         security_flag = byte_buff.get(1)
 
-        self.srp_handler = SRP.SRPHandler(B, g, N, salt, unk_3, security_flag, self.cfg)
+        self.srp_handler = SRP.SRPHandler(B, g, N, salt, security_flag, self.cfg)
         self.srp_handler.step1()
 
         buff = bytearray()

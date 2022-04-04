@@ -1,12 +1,14 @@
 import hashlib
 import os
+import logging
 
 
 class SRPHandler:
-    def __init__(self, B, g, N, salt, unk_3, security_flag, cfg):
+    def __init__(self, B, g, N, salt, security_flag, cfg):
 
         if security_flag:
-            print('Two factor authentication is enabled for this account. Please disable it or use another account')
+            logging.error(
+                'Two factor authentication is enabled for this account. Please disable it or use another account')
             raise ValueError
 
         # computed values
@@ -22,7 +24,6 @@ class SRPHandler:
         self.g = g
         self.N = N
         self.salt = salt
-        self.unk3 = unk_3
         self.cfg = cfg
         self.crc_hash = self.build_crc_hashes()
 
@@ -41,7 +42,7 @@ class SRPHandler:
 
         md = hashlib.sha1(bytes(f'{self.cfg.get_account()}:{self.cfg.get_password()}', 'utf-8'))
         p = md.digest()
-        md = hashlib.sha1(self.salt)
+        md = hashlib.sha1(int.to_bytes(self.salt, 32, 'little'))
         md.update(p)
         self.x = int.from_bytes(md.digest(), 'little')
 
@@ -82,11 +83,26 @@ class SRPHandler:
 
         md = hashlib.sha1(int.to_bytes(t3, 20, 'little'))
         md.update(int.to_bytes(t4_correct, 20, 'little'))
-        md.update(self.salt)
+        md.update(int.to_bytes(self.salt, 32, 'little'))
         md.update(self.A)
         md.update(int.to_bytes(self.B, 32, 'little'))
         md.update(vk)
         self.M = md.digest()
+
+        logging.debug(
+            f'SRP values (little endianness):\n\t'
+            f'k = {self.k}\n\t'
+            f'g = {self.g}\n\t'
+            f'B = {self.B}\n\t'
+            f'N = {self.N}\n\t'
+            f'salt = {self.salt}\n\t'
+            f'a = {self.a}\n\t'
+            f'A = {int.from_bytes(self.A, "little")}\n\t'
+            f'B = {self.B}\n\t'
+            f'u = {self.u}\n\t'
+            f'x = {self.x}\n\t'
+            f'K = {self.K}\n\t'
+            f'M = {int.from_bytes(self.M, "little")}')
 
     def generate_hash_logon_proof(self):
         md = hashlib.sha1(self.A)

@@ -8,16 +8,12 @@ import gameconnector
 
 async def run():
     cfg = config.Config()
-    host, port = cfg.parse_realm_list()
-    logging.info(f'Connecting to {host}:{port}')
-    reader, writer = await asyncio.open_connection(host, port)
 
-    realm_connector = realmconnector.RealmConnector(cfg, reader, writer)
-    game_connector = gameconnector.GameConnector(cfg, reader, writer)
-
+    realm_connector = realmconnector.RealmConnector(cfg)
     realm = await realm_connector.connect()
-    await game_connector.connect(realm)
-    writer.close()
+
+    game_connector = gameconnector.GameConnector(cfg, realm)
+    await game_connector.connect()
 
 
 if __name__ == '__main__':

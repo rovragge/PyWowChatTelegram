@@ -2,47 +2,37 @@ import hashlib
 import re
 import logging
 import PyByteBuffer
+import asyncio
 
+import connector
 import packets.realm
 import SRP
 
 
-class Packet:
-    def __init__(self, packet_id, packet_data):
-        self.id = packet_id
-        self.data = packet_data
-
-
-class RealmConnector:
-    def __init__(self, cfg, reader, writer):
-        self.cfg = cfg
-        self.reader = reader
-        self.writer = writer
+class RealmConnector(connector.Connector):
+    def __init__(self, cfg):
+        super().__init__(cfg)
         self.srp_handler = None
 
     async def connect(self):
-
+        host, port = self.cfg.parse_realm_list()
+        logging.info(f'Connecting to realm server: {host}:{port}')
+        self.reader, self.writer = await asyncio.open_connection(host, port)
         packet = self.get_initial_packet()
-        await self.send(packet)
+        await self.send(packet, is_realm_packet=True)
 
         data = await self.reader.read(128)  # logon challenge
-        packet = self.handle_realm_packet(self.decode(data))
-        await self.send(packet)
+        packet = self.assign_packet_handler(self.decode(data))
+        await self.send(packet, is_realm_packet=True)
 
         data = await self.reader.read(32)  # logon proof
-        packet = self.handle_realm_packet(self.decode(data))
-        await self.send(packet)
+        packet = self.assign_packet_handler(self.decode(data))
+        await self.send(packet, is_realm_packet=True)
 
         data = await self.reader.read(1024)  # realmlist
-        realm = self.handle_realm_packet(self.decode(data))
+        realm = self.assign_packet_handler(self.decode(data))
+        self.writer.close()
         return realm
-
-    async def send(self, packet):
-        temp_array = bytearray()
-        temp_array.append(packet.id)
-        self.writer.write(bytes(temp_array) + bytes(packet.data))
-        await self.writer.drain()
-        logging.info(f'SEND REALM PACKET: {packet.id:04X} - {self.bytes_to_hex_str(packet.data, True, False)}')
 
     def decode(self, data):
         size = 0
@@ -73,9 +63,23 @@ class RealmConnector:
                 size = in_buff.get(2, endianness='little')
         if size > in_buff.remaining:
             return
-        packet = Packet(packet_id, in_buff.slice().array(size))
-        logging.info(f'RECV REALM PACKET: {packet.id:04X} - {self.bytes_to_hex_str(packet.data, True, False)}')
+        packet = connector.Packet(packet_id, in_buff.slice().array(size))
+        logging.debug(f'RECV REALM PACKET: {packet}')
         return packet
+
+    def assign_packet_handler(self, packet):
+        if not isinstance(packet, connector.Packet):
+            logging.error(f'packet is instance of {type(packet)}')
+            return
+        match packet.id:
+            case packets.realm.CMD_AUTH_LOGON_CHALLENGE:
+                return self.handle_CMD_AUTH_LOGON_CHALLENGE(packet)
+            case packets.realm.CMD_AUTH_LOGON_PROOF:
+                return self.handle_CMD_AUTH_LOGON_PROOF(packet)
+            case packets.realm.CMD_REALM_LIST:
+                return self.handle_CMD_REALM_LIST(packet)
+            case _:
+                logging.error(f'Received packet {packet.id:04X} in unexpected logonState')
 
     def get_initial_packet(self):
         version = [bytes(x, 'utf-8') for x in str(self.cfg.get_version()).split('.')]
@@ -101,23 +105,8 @@ class RealmConnector:
         buffer.put(account)
         buffer.strip()
         buffer.rewind()
-        packet = Packet(packets.realm.CMD_AUTH_LOGON_CHALLENGE, buffer.array())
+        packet = connector.Packet(packets.realm.CMD_AUTH_LOGON_CHALLENGE, buffer.array())
         return packet
-
-    def handle_realm_packet(self, packet):
-        if not isinstance(packet, Packet):
-            logging.error(f'packet is instance of {type(packet)}')
-            return
-        match packet.id:
-            case packets.realm.CMD_AUTH_LOGON_CHALLENGE:
-                return self.handle_CMD_AUTH_LOGON_CHALLENGE(packet)
-            case packets.realm.CMD_AUTH_LOGON_PROOF:
-                return self.handle_CMD_AUTH_LOGON_PROOF(packet)
-            case packets.realm.CMD_REALM_LIST:
-                return self.handle_CMD_REALM_LIST(packet)
-            case _:
-                logging.error(f'Received packet {packet.id:04X} in unexpected logonState')
-        pass
 
     def handle_CMD_AUTH_LOGON_CHALLENGE(self, packet):
         byte_buff = PyByteBuffer.ByteBuffer.wrap(packet.data)
@@ -148,7 +137,7 @@ class RealmConnector:
         buff += md.digest()
 
         buff += int.to_bytes(0, 2, 'big')
-        packet = Packet(packets.realm.CMD_AUTH_LOGON_PROOF, buff)
+        packet = connector.Packet(packets.realm.CMD_AUTH_LOGON_PROOF, buff)
         return packet
 
     def handle_CMD_AUTH_LOGON_PROOF(self, packet):
@@ -163,9 +152,9 @@ class RealmConnector:
             return
         else:
             account_flag = byte_buff.get(4)
-            logging.info(f'Successfully logged into realm server. Looking for realm {self.cfg.get_realm()}')
+            logging.info(f'Successfully logged into realm server')
             buff = int.to_bytes(0, 4, 'big')
-            packet = Packet(packets.realm.CMD_REALM_LIST, buff)
+            packet = connector.Packet(packets.realm.CMD_REALM_LIST, buff)
             return packet
 
     def handle_CMD_REALM_LIST(self, packet):
@@ -190,8 +179,8 @@ class RealmConnector:
         realm_count = byte_buff.get(2, endianness='little')
         for _ in range(realm_count):
             realm = {}
-            realm['type'] = byte_buff.get(1) if not_vanilla else None  # pvp/pve
-            realm['lock_flag'] = byte_buff.get(1) if not_vanilla else None
+            realm['is_pvp'] = bool(byte_buff.get(1)) if not_vanilla else None
+            realm['lock_flag'] = bool(byte_buff.get(1)) if not_vanilla else None
             realm['flags'] = byte_buff.get(1)  # offline/recommended/for newbies
             realm['name'] = self.read_string(byte_buff)
             address = self.read_string(byte_buff).split(':')
@@ -217,18 +206,6 @@ class RealmConnector:
     @staticmethod
     def str_to_int(string):
         return int.from_bytes(bytes(string, 'utf-8'), 'big')
-
-    @staticmethod
-    def bytes_to_hex_str(data, add_spaces=False, resolve_plain_text=True):
-        string = ''
-        for byte in data:
-            if resolve_plain_text and 0x20 <= byte >= 0x7f:
-                string += byte + ' '
-            else:
-                string += f'{byte:02X}'
-            if add_spaces:
-                string += ' '
-        return string
 
     @staticmethod
     def read_string(byte_buff):

@@ -7,16 +7,6 @@ import packets.realm
 import SRP
 
 
-def read_string(byte_buff):
-    ret = bytearray()
-    while byte_buff.remaining:
-        byte = byte_buff.get(1)
-        if not byte:
-            break
-        ret += int.to_bytes(byte, 1, 'big')
-    return ret.decode('utf-8')
-
-
 class Packet:
     def __init__(self, packet_id, packet_data):
         self.id = packet_id
@@ -54,38 +44,6 @@ class RealmConnector:
         await self.writer.drain()
         logging.info(f'SEND REALM PACKET: {packet.id:04X} - {self.bytes_to_hex_str(packet.data, True, False)}')
 
-    def get_initial_packet(self):
-        version = [bytes(x, 'utf-8') for x in str(self.cfg.get_version()).split('.')]
-        account = bytes(self.cfg.get_account(), 'utf-8')
-        buffer = PyByteBuffer.ByteBuffer.allocate(100)
-        buffer.put(3 if self.cfg.get_expansion() == 'Vanilla' else 8)
-        buffer.put(30 + len(account), endianness='little', size=2)
-        buffer.put(self.str_to_int('WoW'))
-        buffer.put(0)
-        buffer.put(version[0])
-        buffer.put(version[1])
-        buffer.put(version[2])
-        buffer.put(self.cfg.get_build(), endianness='little')
-        buffer.put(self.str_to_int('x86'), endianness='little', size=4)
-        buffer.put(self.str_to_int(self.cfg.get_platform()), endianness='little', size=4)
-        buffer.put(self.str_to_int(self.cfg.get_locale()), endianness='little', size=4)
-        buffer.put(0)
-        buffer.put(127, size=4)
-        buffer.put(0)
-        buffer.put(0)
-        buffer.put(1)
-        buffer.put(len(account))
-        buffer.put(account)
-        buffer.strip()
-        buffer.rewind()
-        packet = Packet(packets.realm.CMD_AUTH_LOGON_CHALLENGE, buffer.array())
-        return packet
-
-    @staticmethod
-    def reset_position(saved_position, buff):
-        buff.remaining += buff.position - saved_position
-        buff.position = saved_position
-
     def decode(self, data):
         size = 0
         in_buff = PyByteBuffer.ByteBuffer.wrap(data)
@@ -117,6 +75,33 @@ class RealmConnector:
             return
         packet = Packet(packet_id, in_buff.slice().array(size))
         logging.info(f'RECV REALM PACKET: {packet.id:04X} - {self.bytes_to_hex_str(packet.data, True, False)}')
+        return packet
+
+    def get_initial_packet(self):
+        version = [bytes(x, 'utf-8') for x in str(self.cfg.get_version()).split('.')]
+        account = bytes(self.cfg.get_account(), 'utf-8')
+        buffer = PyByteBuffer.ByteBuffer.allocate(100)
+        buffer.put(3 if self.cfg.get_expansion() == 'Vanilla' else 8)
+        buffer.put(30 + len(account), endianness='little', size=2)
+        buffer.put(self.str_to_int('WoW'))
+        buffer.put(0)
+        buffer.put(version[0])
+        buffer.put(version[1])
+        buffer.put(version[2])
+        buffer.put(self.cfg.get_build(), endianness='little')
+        buffer.put(self.str_to_int('x86'), endianness='little', size=4)
+        buffer.put(self.str_to_int(self.cfg.get_platform()), endianness='little', size=4)
+        buffer.put(self.str_to_int(self.cfg.get_locale()), endianness='little', size=4)
+        buffer.put(0)
+        buffer.put(127, size=4)
+        buffer.put(0)
+        buffer.put(0)
+        buffer.put(1)
+        buffer.put(len(account))
+        buffer.put(account)
+        buffer.strip()
+        buffer.rewind()
+        packet = Packet(packets.realm.CMD_AUTH_LOGON_CHALLENGE, buffer.array())
         return packet
 
     def handle_realm_packet(self, packet):
@@ -208,8 +193,8 @@ class RealmConnector:
             realm['type'] = byte_buff.get(1) if not_vanilla else None  # pvp/pve
             realm['lock_flag'] = byte_buff.get(1) if not_vanilla else None
             realm['flags'] = byte_buff.get(1)  # offline/recommended/for newbies
-            realm['name'] = read_string(byte_buff)
-            address = read_string(byte_buff).split(':')
+            realm['name'] = self.read_string(byte_buff)
+            address = self.read_string(byte_buff).split(':')
             realm['host'] = address[0]
             realm['port'] = int(address[1])
             realm['population'] = byte_buff.get(4)
@@ -223,6 +208,11 @@ class RealmConnector:
                 realm['build_info'] = None
             realms.append(realm)
         return realms
+
+    @staticmethod
+    def reset_position(saved_position, buff):
+        buff.remaining += buff.position - saved_position
+        buff.position = saved_position
 
     @staticmethod
     def str_to_int(string):
@@ -239,3 +229,13 @@ class RealmConnector:
             if add_spaces:
                 string += ' '
         return string
+
+    @staticmethod
+    def read_string(byte_buff):
+        ret = bytearray()
+        while byte_buff.remaining:
+            byte = byte_buff.get(1)
+            if not byte:
+                break
+            ret += int.to_bytes(byte, 1, 'big')
+        return ret.decode('utf-8')

@@ -7,22 +7,6 @@ import packets
 import SRP
 
 
-def str_to_int(string):
-    return int.from_bytes(bytes(string, 'utf-8'), 'big')
-
-
-def bytes_to_hex_str(data, add_spaces=False, resolve_plain_text=True):
-    string = ''
-    for byte in data:
-        if resolve_plain_text and 0x20 <= byte >= 0x7f:
-            string += byte + ' '
-        else:
-            string += f'{byte:02X}'
-        if add_spaces:
-            string += ' '
-    return string
-
-
 def read_string(byte_buff):
     ret = bytearray()
     while byte_buff.remaining:
@@ -48,7 +32,7 @@ class RealmConnector:
 
     async def connect(self):
 
-        packet = Packet(packets.RealmPackets.CMD_AUTH_LOGON_CHALLENGE, self.get_initial_data())
+        packet = self.get_initial_packet()
         await self.send(packet)
 
         data = await self.reader.read(128)  # logon challenge
@@ -68,23 +52,23 @@ class RealmConnector:
         temp_array.append(packet.id)
         self.writer.write(bytes(temp_array) + bytes(packet.data))
         await self.writer.drain()
-        logging.info(f'SEND REALM PACKET: {packet.id:04X} - {bytes_to_hex_str(packet.data, True, False)}')
+        logging.info(f'SEND REALM PACKET: {packet.id:04X} - {self.bytes_to_hex_str(packet.data, True, False)}')
 
-    def get_initial_data(self):
+    def get_initial_packet(self):
         version = [bytes(x, 'utf-8') for x in str(self.cfg.get_version()).split('.')]
         account = bytes(self.cfg.get_account(), 'utf-8')
         buffer = PyByteBuffer.ByteBuffer.allocate(100)
         buffer.put(3 if self.cfg.get_expansion() == 'Vanilla' else 8)
         buffer.put(30 + len(account), endianness='little', size=2)
-        buffer.put(str_to_int('WoW'))
+        buffer.put(self.str_to_int('WoW'))
         buffer.put(0)
         buffer.put(version[0])
         buffer.put(version[1])
         buffer.put(version[2])
         buffer.put(self.cfg.get_build(), endianness='little')
-        buffer.put(str_to_int('x86'), endianness='little', size=4)
-        buffer.put(str_to_int(self.cfg.get_platform()), endianness='little', size=4)
-        buffer.put(str_to_int(self.cfg.get_locale()), endianness='little', size=4)
+        buffer.put(self.str_to_int('x86'), endianness='little', size=4)
+        buffer.put(self.str_to_int(self.cfg.get_platform()), endianness='little', size=4)
+        buffer.put(self.str_to_int(self.cfg.get_locale()), endianness='little', size=4)
         buffer.put(0)
         buffer.put(127, size=4)
         buffer.put(0)
@@ -94,7 +78,8 @@ class RealmConnector:
         buffer.put(account)
         buffer.strip()
         buffer.rewind()
-        return buffer.array()
+        packet = Packet(packets.RealmPackets.CMD_AUTH_LOGON_CHALLENGE, buffer.array())
+        return packet
 
     @staticmethod
     def reset_position(saved_position, buff):
@@ -131,7 +116,7 @@ class RealmConnector:
         if size > in_buff.remaining:
             return
         packet = Packet(packet_id, in_buff.slice().array(size))
-        logging.info(f'RECV REALM PACKET: {packet.id:04X} - {bytes_to_hex_str(packet.data, True, False)}')
+        logging.info(f'RECV REALM PACKET: {packet.id:04X} - {self.bytes_to_hex_str(packet.data, True, False)}')
         return packet
 
     def handle_realm_packet(self, packet):
@@ -222,7 +207,7 @@ class RealmConnector:
             realm = {}
             realm['type'] = byte_buff.get(1) if not_vanilla else None  # pvp/pve
             realm['lock_flag'] = byte_buff.get(1) if not_vanilla else None
-            realm['flags'] = byte_buff.get(1)  # offline/recommended/for newbs
+            realm['flags'] = byte_buff.get(1)  # offline/recommended/for newbies
             realm['name'] = read_string(byte_buff)
             address = read_string(byte_buff).split(':')
             realm['host'] = address[0]
@@ -238,3 +223,19 @@ class RealmConnector:
                 realm['build_info'] = None
             realms.append(realm)
         return realms
+
+    @staticmethod
+    def str_to_int(string):
+        return int.from_bytes(bytes(string, 'utf-8'), 'big')
+
+    @staticmethod
+    def bytes_to_hex_str(data, add_spaces=False, resolve_plain_text=True):
+        string = ''
+        for byte in data:
+            if resolve_plain_text and 0x20 <= byte >= 0x7f:
+                string += byte + ' '
+            else:
+                string += f'{byte:02X}'
+            if add_spaces:
+                string += ' '
+        return string

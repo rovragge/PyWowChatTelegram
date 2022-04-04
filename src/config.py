@@ -1,5 +1,5 @@
 import lxml.objectify
-
+import logging
 
 class Config:
 
@@ -65,7 +65,7 @@ class Config:
             case '5.4.8':
                 return 18414
             case _:
-                print(f'Build version {version} not supported')
+                logging.error(f'Build version {version} not supported')
                 raise ValueError
 
     def get_expansion(self):
@@ -82,5 +82,5 @@ class Config:
             case '5':
                 return 'MoP'
             case _:
-                print(f'Expansion {version} not supported!')
+                logging.error(f'Expansion {version} not supported!')
                 raise ValueError

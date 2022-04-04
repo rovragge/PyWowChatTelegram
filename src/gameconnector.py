@@ -16,7 +16,7 @@ class GameConnector(connector.Connector):
         self.reader, self.writer = await asyncio.open_connection(self.realm["host"], self.realm["port"])
         data = await self.reader.read(64)
         packet = self.assign_packet_handler(self.decode(data))
-        #await self.send(packet)
+        # await self.send(packet)
         self.writer.close()
 
     def decode(self, data):

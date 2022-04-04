@@ -28,9 +28,9 @@ class SRPHandler:
         self.crc_hash = self.build_crc_hashes()
 
     @staticmethod
-    def get_random_of_length(nbytes):
-        offset = (nbytes * 8) - 1
-        return int.from_bytes(os.urandom(nbytes), 'big') | (1 << offset)
+    def get_random_of_length(n_bytes):
+        offset = (n_bytes * 8) - 1
+        return int.from_bytes(os.urandom(n_bytes), 'big') | (1 << offset)
 
     def step1(self):
         self.a = self.get_random_of_length(32)

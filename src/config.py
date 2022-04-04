@@ -1,6 +1,7 @@
 import lxml.objectify
 import logging
 
+
 class Config:
 
     def __init__(self, xmlfile='config.xml'):

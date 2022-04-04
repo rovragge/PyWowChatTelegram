@@ -21,7 +21,7 @@ class RealmConnector(connector.Connector):
         packet = self.get_initial_packet()
         await self.send(packet, is_realm_packet=True)
 
-        data = await self.reader.read(128)  # logon challenge
+        data = await self.reader.read(119)  # logon challenge
         packet = self.assign_packet_handler(self.decode(data))
         await self.send(packet, is_realm_packet=True)
 
@@ -29,7 +29,7 @@ class RealmConnector(connector.Connector):
         packet = self.assign_packet_handler(self.decode(data))
         await self.send(packet, is_realm_packet=True)
 
-        data = await self.reader.read(1024)  # realmlist
+        data = await self.reader.read(4096)  # size differs depending on realm amount and can be really big
         realm = self.assign_packet_handler(self.decode(data))
         self.writer.close()
         return realm
@@ -103,7 +103,7 @@ class RealmConnector(connector.Connector):
         buffer.put(1)
         buffer.put(len(account))
         buffer.put(account)
-        buffer.strip()
+        buffer.strip() # 50 to 100 bytes
         buffer.rewind()
         packet = connector.Packet(packets.realm.CMD_AUTH_LOGON_CHALLENGE, buffer.array())
         return packet
@@ -122,7 +122,7 @@ class RealmConnector(connector.Connector):
         n_length = byte_buff.get(1)
         N = int.from_bytes(byte_buff.array(n_length), 'little')
         salt = int.from_bytes(byte_buff.array(32), 'little')
-        unk_3 = byte_buff.array(16)
+        byte_buff.array(16)
         security_flag = byte_buff.get(1)
 
         self.srp_handler = SRP.SRPHandler(B, g, N, salt, security_flag, self.cfg)

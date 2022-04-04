@@ -3,3 +3,6 @@ class GameConnector:
         self.cfg = cfg
         self.reader = reader
         self.writer = writer
+
+    def connect(self, realm):
+        pass

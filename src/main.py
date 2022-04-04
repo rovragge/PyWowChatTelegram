@@ -15,6 +15,7 @@ async def run(cfg, logger):
     game_connector = gameconnector.GameConnector(cfg, reader, writer)
 
     realm = await realm_connector.connect()
+    # await game_connector.connect(realm)
     writer.close()
 
 

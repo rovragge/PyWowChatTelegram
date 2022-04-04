@@ -3,7 +3,7 @@ import re
 import logging
 import PyByteBuffer
 
-import packets
+import packets.realm
 import SRP
 
 
@@ -78,7 +78,7 @@ class RealmConnector:
         buffer.put(account)
         buffer.strip()
         buffer.rewind()
-        packet = Packet(packets.RealmPackets.CMD_AUTH_LOGON_CHALLENGE, buffer.array())
+        packet = Packet(packets.realm.CMD_AUTH_LOGON_CHALLENGE, buffer.array())
         return packet
 
     @staticmethod
@@ -93,23 +93,23 @@ class RealmConnector:
             return
         packet_id = in_buff.get(1)
         match packet_id:
-            case packets.RealmPackets.CMD_AUTH_LOGON_CHALLENGE:
+            case packets.realm.CMD_AUTH_LOGON_CHALLENGE:
                 if in_buff.remaining < 2:
                     return
                 saved_position = in_buff.position
                 in_buff.get(1)
-                size = 118 if packets.AuthResult.is_success(in_buff.get(1)) else 2
+                size = 118 if packets.realm.AuthResult.is_success(in_buff.get(1)) else 2
                 self.reset_position(saved_position, in_buff)
-            case packets.RealmPackets.CMD_AUTH_LOGON_PROOF:
+            case packets.realm.CMD_AUTH_LOGON_PROOF:
                 if in_buff.remaining < 1:
                     return
                 saved_position = in_buff.position
-                if packets.AuthResult.is_success(in_buff.get(1)):
+                if packets.realm.AuthResult.is_success(in_buff.get(1)):
                     size = 25 if self.cfg.get_expansion() == 'Vanilla' else 31
                 else:
                     size = 1 if not in_buff.remaining else 3
                 self.reset_position(saved_position, in_buff)
-            case packets.RealmPackets.CMD_REALM_LIST:
+            case packets.realm.CMD_REALM_LIST:
                 if in_buff.remaining < 2:
                     return
                 size = in_buff.get(2, endianness='little')
@@ -124,11 +124,11 @@ class RealmConnector:
             logging.error(f'packet is instance of {type(packet)}')
             return
         match packet.id:
-            case packets.RealmPackets.CMD_AUTH_LOGON_CHALLENGE:
+            case packets.realm.CMD_AUTH_LOGON_CHALLENGE:
                 return self.handle_CMD_AUTH_LOGON_CHALLENGE(packet)
-            case packets.RealmPackets.CMD_AUTH_LOGON_PROOF:
+            case packets.realm.CMD_AUTH_LOGON_PROOF:
                 return self.handle_CMD_AUTH_LOGON_PROOF(packet)
-            case packets.RealmPackets.CMD_REALM_LIST:
+            case packets.realm.CMD_REALM_LIST:
                 return self.handle_CMD_REALM_LIST(packet)
             case _:
                 logging.error(f'Received packet {packet.id:04X} in unexpected logonState')
@@ -138,8 +138,8 @@ class RealmConnector:
         byte_buff = PyByteBuffer.ByteBuffer.wrap(packet.data)
         error_code = byte_buff.get(1)
         result = byte_buff.get(1)
-        if not packets.AuthResult.is_success(result):
-            logging.error(packets.AuthResult.get_message(result))
+        if not packets.realm.AuthResult.is_success(result):
+            logging.error(packets.realm.AuthResult.get_message(result))
             raise ValueError
 
         B = int.from_bytes(byte_buff.array(32), 'little')
@@ -163,14 +163,14 @@ class RealmConnector:
         buff += md.digest()
 
         buff += int.to_bytes(0, 2, 'big')
-        packet = Packet(packets.RealmPackets.CMD_AUTH_LOGON_PROOF, buff)
+        packet = Packet(packets.realm.CMD_AUTH_LOGON_PROOF, buff)
         return packet
 
     def handle_CMD_AUTH_LOGON_PROOF(self, packet):
         byte_buff = PyByteBuffer.ByteBuffer.wrap(packet.data)
         result = byte_buff.get(1)
-        if not packets.AuthResult.is_success(result):
-            logging.error(packets.AuthResult.get_message(result))
+        if not packets.realm.AuthResult.is_success(result):
+            logging.error(packets.realm.AuthResult.get_message(result))
             return
         proof = byte_buff.array(20)
         if proof != self.srp_handler.generate_hash_logon_proof():
@@ -180,7 +180,7 @@ class RealmConnector:
             account_flag = byte_buff.get(4)
             logging.info(f'Successfully logged into realm server. Looking for realm {self.cfg.get_realm()}')
             buff = int.to_bytes(0, 4, 'big')
-            packet = Packet(packets.RealmPackets.CMD_REALM_LIST, buff)
+            packet = Packet(packets.realm.CMD_REALM_LIST, buff)
             return packet
 
     def handle_CMD_REALM_LIST(self, packet):

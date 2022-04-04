@@ -224,7 +224,9 @@ class RealmConnector:
             realm['lock_flag'] = byte_buff.get(1) if not_vanilla else None
             realm['flags'] = byte_buff.get(1)  # offline/recommended/for newbs
             realm['name'] = read_string(byte_buff)
-            realm['address'] = read_string(byte_buff)
+            address = read_string(byte_buff).split(':')
+            realm['host'] = address[0]
+            realm['port'] = int(address[1])
             realm['population'] = byte_buff.get(4)
             realm['num_chars'] = byte_buff.get(1)
             realm['timezone'] = byte_buff.get(1)

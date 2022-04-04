@@ -1,3 +1,4 @@
+import logging
 import packets.game
 
 
@@ -8,5 +9,5 @@ class GameConnector:
         self.writer = writer
         self.packets = packets.game.get(self.cfg.get_expansion())
 
-    def connect(self, realm):
-        pass
+    async def connect(self, realm):
+        logging.info(f'Connecting to realm {realm["name"]} ({realm["host"]}:{realm["port"]})')

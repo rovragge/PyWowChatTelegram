@@ -1,13 +1,13 @@
 import hashlib
 import os
-import logging
+from src.common.config import cfg
 
 
 class SRPHandler:
-    def __init__(self, B, g, N, salt, security_flag, cfg):
+    def __init__(self, B, g, N, salt, security_flag):
 
         if security_flag:
-            logging.error(
+            cfg.logger.error(
                 'Two factor authentication is enabled for this account. Please disable it or use another account')
             raise ValueError
 
@@ -24,7 +24,6 @@ class SRPHandler:
         self.g = g
         self.N = N
         self.salt = salt
-        self.cfg = cfg
         self.crc_hash = self.build_crc_hashes()
 
     @staticmethod
@@ -40,7 +39,7 @@ class SRPHandler:
         md.update(int.to_bytes(self.B, 32, 'little'))
         self.u = int.from_bytes(md.digest(), 'little')
 
-        md = hashlib.sha1(bytes(f'{self.cfg.get_account()}:{self.cfg.get_password()}', 'utf-8'))
+        md = hashlib.sha1(bytes(f'{cfg.account}:{cfg.password}', 'utf-8'))
         p = md.digest()
         md = hashlib.sha1(int.to_bytes(self.salt, 32, 'little'))
         md.update(p)
@@ -74,7 +73,7 @@ class SRPHandler:
         for i in range(20):
             hash[i] = (hash[i] ^ digest[i])
 
-        md = hashlib.sha1(bytes(self.cfg.get_account(), 'utf-8'))
+        md = hashlib.sha1(bytes(cfg.account, 'utf-8'))
         t4 = md.digest()
 
         self.K = int.from_bytes(vk, 'little')
@@ -89,7 +88,7 @@ class SRPHandler:
         md.update(vk)
         self.M = md.digest()
 
-        logging.debug(
+        cfg.logger.debug(
             f'SRP values (little endianness):\n\t'
             f'k = {self.k}\n\t'
             f'g = {self.g}\n\t'
@@ -98,7 +97,6 @@ class SRPHandler:
             f'salt = {self.salt}\n\t'
             f'a = {self.a}\n\t'
             f'A = {int.from_bytes(self.A, "little")}\n\t'
-            f'B = {self.B}\n\t'
             f'u = {self.u}\n\t'
             f'x = {self.x}\n\t'
             f'K = {self.K}\n\t'
@@ -110,7 +108,8 @@ class SRPHandler:
         md.update(int.to_bytes(self.K, 40, 'little'))
         return md.digest()
 
-    def build_crc_hashes(self):
+    @staticmethod
+    def build_crc_hashes():
         hashes = {
             'Mac': {
                 5875: b'\x8d\x17<\xc3\x81\x96\x1e\xeb\xab\xf36\xf5\xe6g[\x10\x1b\xb5\x13\xe5',
@@ -124,7 +123,7 @@ class SRPHandler:
             }
         }
         try:
-            hash = hashes[self.cfg.get_platform()][self.cfg.get_build()]
+            hash = hashes[cfg.platform][cfg.build]
         except KeyError:
             hash = bytearray(20)
         return hash

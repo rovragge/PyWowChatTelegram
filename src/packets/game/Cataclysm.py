@@ -45,7 +45,7 @@ class GamePackets(WotLK.GamePackets):
     CMSG_MESSAGECHAT_WHISPER = 0x0D56
     CMSG_MESSAGECHAT_YELL = 0x3544
 
-    overrideSMSG_MOTD = 0x0A35
+    SMSG_MOTD = 0x0A35
     COMPRESSED_DATA_MASK = 0x8000
     WOW_CONNECTION = 0x4F57  # same hack as in mangos
 

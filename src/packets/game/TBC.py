@@ -1,0 +1,27 @@
+from src.packets.game import Vanilla
+
+
+class GamePackets(Vanilla.GamePackets):
+    # General messages
+    SMSG_GM_MESSAGECHAT = 0x03B2
+    SMSG_MOTD = 0x033D
+    CMSG_KEEP_ALIVE = 0x0406
+
+    # Chat messages
+    CHAT_MSG_SAY = 0x01
+    CHAT_MSG_GUILD = 0x04
+    CHAT_MSG_OFFICER = 0x05
+    CHAT_MSG_YELL = 0x06
+    CHAT_MSG_WHISPER = 0x07
+    CHAT_MSG_EMOTE = 0x0A
+    CHAT_MSG_TEXT_EMOTE = 0x0B
+    CHAT_MSG_CHANNEL = 0x11
+    CHAT_MSG_SYSTEM = 0x00
+    CHAT_MSG_CHANNEL_JOIN = 0x12
+    CHAT_MSG_CHANNEL_LEAVE = 0x13
+    CHAT_MSG_CHANNEL_LIST = 0x14
+    CHAT_MSG_CHANNEL_NOTICE = 0x15
+    CHAT_MSG_CHANNEL_NOTICE_USER = 0x16
+
+    # Channels
+    CHANNEL_GUILD_RECRUITMENT = 0x19

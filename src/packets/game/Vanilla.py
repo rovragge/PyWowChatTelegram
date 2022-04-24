@@ -1,7 +1,7 @@
-import logging
+import src.common.config as config
 
 
-class Vanilla:
+class GamePackets:
     # General messages
     CMSG_CHAR_ENUM = 0x37
     SMSG_CHAR_ENUM = 0x3B
@@ -219,7 +219,7 @@ class Vanilla:
             case cls.RACE_PANDAREN_HORDE:
                 return 'Horde Pandaren'
             case _:
-                logging.error(f'No string for this race: {race}')
+                config.cfg.logger.error(f'No string for this race: {race}')
                 return 'Unknown race'
 
     @classmethod
@@ -230,7 +230,7 @@ class Vanilla:
             case cls.GENDER_FEMALE:
                 return 'Female'
             case _:
-                logging.error(f'No string for this gender: {gender}')
+                config.cfg.logger.error(f'No string for this gender: {gender}')
                 return 'Unknown gender'
 
     @classmethod
@@ -259,7 +259,7 @@ class Vanilla:
             case cls.CLASS_DRUID:
                 return 'Druid'
             case _:
-                logging.error(f'No string for this class: {char_class}')
+                config.cfg.logger.error(f'No string for this class: {char_class}')
                 return 'Unknown class'
 
     @classmethod
@@ -302,7 +302,7 @@ class Vanilla:
             case cls.CHAT_MSG_SYSTEM:
                 return 'System'
             case _:
-                logging.error(f'No string for this chat channel: {channel}')
+                config.cfg.logger.error(f'No string for this chat channel: {channel}')
                 return 'Unknown channel'
 
     @classmethod
@@ -325,168 +325,5 @@ class Vanilla:
             case 'channel' | 'custom':
                 return cls.CHAT_MSG_CHANNEL
             case _:
-                logging.error(f'No chat channel for this string: {channel_str}')
+                config.cfg.logger.error(f'No chat channel for this string: {channel_str}')
                 return -1
-
-
-class TBC(Vanilla):
-    # General messages
-    SMSG_GM_MESSAGECHAT = 0x03B2
-    SMSG_MOTD = 0x033D
-    CMSG_KEEP_ALIVE = 0x0406
-
-    # Chat messages
-    CHAT_MSG_SAY = 0x01
-    CHAT_MSG_GUILD = 0x04
-    CHAT_MSG_OFFICER = 0x05
-    CHAT_MSG_YELL = 0x06
-    CHAT_MSG_WHISPER = 0x07
-    CHAT_MSG_EMOTE = 0x0A
-    CHAT_MSG_TEXT_EMOTE = 0x0B
-    CHAT_MSG_CHANNEL = 0x11
-    CHAT_MSG_SYSTEM = 0x00
-    CHAT_MSG_CHANNEL_JOIN = 0x12
-    CHAT_MSG_CHANNEL_LEAVE = 0x13
-    CHAT_MSG_CHANNEL_LIST = 0x14
-    CHAT_MSG_CHANNEL_NOTICE = 0x15
-    CHAT_MSG_CHANNEL_NOTICE_USER = 0x16
-
-    # Channels
-    CHANNEL_GUILD_RECRUITMENT = 0x19
-
-
-class WotLK(TBC):
-    # General messages
-    SMSG_GM_MESSAGECHAT = 0x03B3
-    CMSG_KEEP_ALIVE = 0x0407
-
-
-class Cataclysm(WotLK):
-    # General messages
-    CMSG_CHAR_ENUM = 0x0502
-    SMSG_CHAR_ENUM = 0x10B0
-    CMSG_PLAYER_LOGIN = 0x05B1
-    CMSG_LOGOUT_REQUEST = 0x0A25
-    CMSG_NAME_QUERY = 0x2224
-    SMSG_NAME_QUERY = 0x6E04
-    CMSG_WHO = 0x6C15
-    SMSG_WHO = 0x6907
-    CMSG_GUILD_QUERY = 0x4426
-    SMSG_GUILD_QUERY = 0x0E06
-    CMSG_GUILD_ROSTER = 0x1226
-    SMSG_GUILD_ROSTER = 0x3DA3
-    SMSG_GUILD_EVENT = 0x0705
-    SMSG_MESSAGECHAT = 0x2026
-    SMSG_GM_MESSAGECHAT = 0x13B4
-    CMSG_JOIN_CHANNEL = 0x0156
-    SMSG_CHANNEL_NOTIFY = 0x0825
-    SMSG_NOTIFICATION = 0x14A0
-    CMSG_PING = 0x444D
-    SMSG_AUTH_CHALLENGE = 0x4542
-    CMSG_AUTH_CHALLENGE = 0x0449
-    SMSG_AUTH_RESPONSE = 0x5DB6
-    SMSG_LOGIN_VERIFY_WORLD = 0x2005
-    SMSG_SERVER_MESSAGE = 0x6C04
-    SMSG_WARDEN_DATA = 0x12E7
-    CMSG_WARDEN_DATA = 0x12E8
-    SMSG_INVALIDATE_PLAYER = 0x6325
-    CMSG_KEEP_ALIVE = 0x0015
-    SMSG_TIME_SYNC_REQ = 0x3CA4
-    CMSG_TIME_SYNC_RESP = 0x3B0C
-    CMSG_MESSAGECHAT_AFK = 0x0D44
-    CMSG_MESSAGECHAT_BATTLEGROUND = 0x2156
-    CMSG_MESSAGECHAT_CHANNEL = 0x1D44
-    CMSG_MESSAGECHAT_DND = 0x2946
-    CMSG_MESSAGECHAT_EMOTE = 0x1156
-    CMSG_MESSAGECHAT_GUILD = 0x3956
-    CMSG_MESSAGECHAT_OFFICER = 0x1946
-    CMSG_MESSAGECHAT_PARTY = 0x1D46
-    CMSG_MESSAGECHAT_SAY = 0x1154
-    CMSG_MESSAGECHAT_WHISPER = 0x0D56
-    CMSG_MESSAGECHAT_YELL = 0x3544
-
-    overrideSMSG_MOTD = 0x0A35
-    COMPRESSED_DATA_MASK = 0x8000
-    WOW_CONNECTION = 0x4F57  # same hack as in mangos
-
-    # Guild events
-    GE_PROMOTED = 0x01
-    GE_DEMOTED = 0x02
-    GE_MOTD = 0x03
-    GE_JOINED = 0x04
-    GE_LEFT = 0x05
-    GE_REMOVED = 0x06
-    GE_SIGNED_ON = 0x10
-    GE_SIGNED_OFF = 0x11
-
-    # Channels
-    CHANNEL_GUILD_RECRUITMENT = 0x00
-
-
-class MoP(Cataclysm):
-    # General messages
-    CMSG_MESSAGECHAT_AFK = 0x0EAB
-    CMSG_MESSAGECHAT_CHANNEL = 0x00BB
-    CMSG_MESSAGECHAT_DND = 0x002E
-    CMSG_MESSAGECHAT_EMOTE = 0x103E
-    CMSG_MESSAGECHAT_GUILD = 0x0CAE
-    CMSG_MESSAGECHAT_OFFICER = 0x0ABF
-    CMSG_MESSAGECHAT_PARTY = 0x109A
-    CMSG_MESSAGECHAT_SAY = 0x0A9A
-    CMSG_MESSAGECHAT_WHISPER = 0x123E
-    CMSG_MESSAGECHAT_YELL = 0x04AA
-    CMSG_CHAR_ENUM = 0x00E0
-    SMSG_CHAR_ENUM = 0x11C3
-    CMSG_PLAYER_LOGIN = 0x158F
-    CMSG_LOGOUT_REQUEST = 0x1349
-    CMSG_NAME_QUERY = 0x0328
-    SMSG_NAME_QUERY = 0x169B
-    CMSG_GUILD_QUERY = 0x1AB6
-    SMSG_GUILD_QUERY = 0x1B79
-    CMSG_WHO = 0x18A3
-    SMSG_WHO = 0x161B
-    CMSG_GUILD_ROSTER = 0x1459
-    SMSG_GUILD_ROSTER = 0x0BE0
-    SMSG_MESSAGECHAT = 0x1A9A
-    CMSG_JOIN_CHANNEL = 0x148E
-    SMSG_CHANNEL_NOTIFY = 0x0F06
-    SMSG_NOTIFICATION = 0x0C2A
-    CMSG_PING = 0x0012
-    SMSG_AUTH_CHALLENGE = 0x0949
-    CMSG_AUTH_CHALLENGE = 0x00B2
-    SMSG_AUTH_RESPONSE = 0x0ABA
-    SMSG_LOGIN_VERIFY_WORLD = 0x1C0F
-    SMSG_SERVER_MESSAGE = 0x0302
-    SMSG_WARDEN_DATA = 0x0C0A
-    CMSG_WARDEN_DATA = 0x1816
-    SMSG_INVALIDATE_PLAYER = 0x102E
-    CMSG_KEEP_ALIVE = 0x1A87
-    SMSG_TIME_SYNC_REQ = 0x1A8F
-    CMSG_TIME_SYNC_RESP = 0x01DB
-    SMSG_GUILD_MOTD = 0x0B68
-    SMSG_GUILD_RANKS_UPDATE = 0x0A60
-    SMSG_GUILD_INVITE_ACCEPT = 0x0B69
-    SMSG_GUILD_MEMBER_LOGGED = 0x0B70
-    SMSG_GUILD_LEAVE = 0x0BF8
-    SMSG_MOTD = 0x183B
-    SMSG_COMPRESSED_DATA = 0x1568
-
-    # Chat messages
-    CHAT_MSG_ACHIEVEMENT = 0x2E
-    CHAT_MSG_GUILD_ACHIEVEMENT = 0x2F
-
-
-def get(expansion):
-    match expansion:
-        case 'Vanilla':
-            return Vanilla
-        case 'TBC':
-            return TBC
-        case 'WotLK':
-            return WotLK
-        case 'Cataclysm':
-            return Cataclysm
-        case 'MoP':
-            return MoP
-        case '_':
-            logging.error(f'No packets for this expansion: {expansion}')

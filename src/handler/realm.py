@@ -117,13 +117,3 @@ class RealmPacketHandler:
              for realm in realms])
         cfg.logger.debug(string)
         return realms
-
-    @staticmethod
-    def read_string(buff):
-        btarr = bytearray()
-        while buff.remaining:
-            byte = buff.get(1)
-            if not byte:
-                break
-            btarr += int.to_bytes(byte, 1, 'big')
-        return btarr.decode('utf-8')

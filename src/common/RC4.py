@@ -1,4 +1,5 @@
-# used for warden and wotlk header encryption
+import src.common.config as config
+
 
 class RC4:
     SBOX_LENGTH = 256
@@ -8,7 +9,8 @@ class RC4:
         self.i = 0
         self.j = 0
 
-    def init_sbox(self, key):
+    @staticmethod
+    def init_sbox(key):
         sbox = [i for i in range(RC4.SBOX_LENGTH)]
         j = 0
         for i in range(RC4.SBOX_LENGTH):

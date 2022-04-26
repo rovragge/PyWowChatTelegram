@@ -86,7 +86,8 @@ class RealmPacketHandler:
         target_realm['session_key'] = int.to_bytes(self.srp_handler.K, 40, 'little')
         cfg.realm = target_realm
 
-    def parse_realm_list(self, packet):  # different for Vanilla/TBC+
+    @staticmethod
+    def parse_realm_list(packet):  # different for Vanilla/TBC+
         not_vanilla = cfg.expansion != 'Vanilla'
         byte_buff = PyByteBuffer.ByteBuffer.wrap(packet.data)
         byte_buff.get(4)

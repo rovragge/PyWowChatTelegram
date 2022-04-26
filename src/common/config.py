@@ -9,12 +9,12 @@ from importlib import import_module
 class _Config:
 
     def __init__(self):
-        self.logger = self.setup_log()
-        with open(os.path.join(os.path.dirname(sys.argv[0]), 'config.xml'), 'r', encoding='utf-8') as file:
-            xml_obj = lxml.objectify.fromstring(file.read())
-
+        with open(os.path.join(os.path.dirname(sys.argv[0]), 'config.xml'), 'r', encoding='utf-8') as xml_file:
+            xml_obj = lxml.objectify.fromstring(xml_file.read())
+        self.logger = self.setup_log(xml_obj.logger)
         self.account = str(xml_obj.wow.account).upper()
         self.password = str(xml_obj.wow.password).upper()
+        self.character = str(xml_obj.wow.character).lower()
         self.version = str(xml_obj.wow.version)
         self.platform = str(xml_obj.wow.platform)
         self.realmlist = str(xml_obj.wow.realmlist)
@@ -23,10 +23,12 @@ class _Config:
         self.host, self.port = self.parse_realm_list()
         self.build = self.get_build()
         self.expansion = self.get_expansion()
+        self.server_MOTD_enabled = bool(xml_obj.wow.server_motd_enabled)
 
         self.realm = None
         self.game_packets = getattr(import_module(f'src.packets.game.{self.expansion}'), 'GamePackets')
         self.realm_packets = getattr(import_module('src.packets.realm'), 'RealmPackets')
+        self.auth_results = getattr(import_module('src.packets.auth'), 'AuthResults')
         self.crypt = getattr(import_module(f'src.header_crypt.{self.expansion}'), 'GameHeaderCrypt')()
 
         self.logger.debug('Config values:\n\t'
@@ -41,11 +43,22 @@ class _Config:
                           f'port = {self.port}\n\t'
                           f'realm = {self.realm_name}')
 
-    def setup_log(self):
-        log = logging.getLogger('app')
-        log.setLevel(logging.DEBUG)
-        handler = logging.StreamHandler()
-        handler.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
+    @staticmethod
+    def setup_log(logger_cfg):
+        log = logging.getLogger(str(logger_cfg.name) if logger_cfg.name else 'app')
+        match str(logger_cfg.level).lower():
+            case 'critical':
+                log.setLevel(logging.CRITICAL)
+            case 'error':
+                log.setLevel(logging.ERROR)
+            case 'warning':
+                log.setLevel(logging.WARNING)
+            case 'info':
+                log.setLevel(logging.INFO)
+            case 'debug' | _:
+                log.setLevel(logging.DEBUG)
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setFormatter(logging.Formatter(str(logger_cfg.format)))
         log.addHandler(handler)
         return log
 

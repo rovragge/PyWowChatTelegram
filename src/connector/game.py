@@ -16,9 +16,11 @@ class GameConnector(Connector):
     async def run(self):
         cfg.logger.info(f'Connecting to game server: {cfg.realm["name"]}')
         self.reader, self.writer = await asyncio.open_connection(cfg.realm['host'], cfg.realm['port'])
-        self.receiver_task = asyncio.create_task(self.receiver(), name='receiver')
-        self.sender_task = asyncio.create_task(self.sender(), name='sender')
-        await asyncio.gather(self.receiver_task, self.sender_task)
+        self.main_task = asyncio.gather(self.receiver_coroutine(), self.sender_coroutine(), self.handler_coroutine())
+        try:
+            await self.main_task
+        except asyncio.exceptions.CancelledError:
+            return
 
     async def receiver(self):
         self.handler.handle_packet(await self.receive(64))

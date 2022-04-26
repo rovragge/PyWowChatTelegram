@@ -16,17 +16,17 @@ class RealmConnector(Connector):
         self.decoder = RealmPacketDecoder()
         self.encoder = RealmPacketEncoder()
         self.handler = RealmPacketHandler(self.out_queue)
-
         self.srp_handler = None
 
     async def run(self):
         host, port = cfg.parse_realm_list()
         cfg.logger.info(f'Connecting to realm server: {host}:{port}')
         self.reader, self.writer = await asyncio.open_connection(host, port)
-        self.receiver_task = asyncio.create_task(self.receiver(), name='receiver')
-        self.sender_task = asyncio.create_task(self.sender(), name='sender')
-        await self.out_queue.put(self.get_initial_packet())
-        await asyncio.gather(self.receiver_task, self.sender_task)
+        self.main_task = asyncio.gather(self.receiver_coroutine(), self.sender_coroutine(), self.handler_coroutine())
+        try:
+            await self.main_task
+        except asyncio.exceptions.CancelledError:
+            return
 
     async def receiver(self):
         self.handler.handle_packet(await self.receive(119))  # logon challenge

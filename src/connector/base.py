@@ -9,15 +9,12 @@ class Connector:
         self.reader = None
         self.writer = None
 
-        # tasks are created separately, not inside gather, so that they can be canceled later
-        self.receiver_task = None
-        self.sender_task = None
+        self.main_task = None
 
         # packets
         self.decoder = None
         self.encoder = None
         self.handler = None
-
         # packet queues
         self.in_queue = asyncio.Queue()
         self.out_queue = asyncio.Queue()

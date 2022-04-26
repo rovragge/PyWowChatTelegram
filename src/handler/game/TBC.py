@@ -8,13 +8,13 @@ class GamePacketHandler(Vanilla.GamePacketHandler):
     def handle_packet(self, packet):
         match packet.id:
             case cfg.game_packets.SMSG_GM_MESSAGECHAT:
-                self.handle_SMSG_GM_MESSAGECHAT(packet)
+                return self.handle_SMSG_MESSAGECHAT(packet)
             case cfg.game_packets.SMSG_MOTD:
-                self.handle_SMSG_MOTD(packet)
+                return self.handle_SMSG_MOTD(packet)
             case cfg.game_packets.SMSG_TIME_SYNC_REQ:
-                self.handle_SMSG_TIME_SYNC_REQ(packet)
+                return self.handle_SMSG_TIME_SYNC_REQ(packet)
             case _:
-                super().handle_packet(packet)
+                return super().handle_packet(packet)
 
     def handle_SMSG_GM_MESSAGECHAT(self, packet):
         pass

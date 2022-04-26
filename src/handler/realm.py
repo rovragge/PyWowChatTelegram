@@ -20,11 +20,11 @@ class RealmPacketHandler:
             return
         match packet.id:
             case cfg.realm_packets.CMD_AUTH_LOGON_CHALLENGE:
-                self.handle_CMD_AUTH_LOGON_CHALLENGE(packet)
+                return self.handle_CMD_AUTH_LOGON_CHALLENGE(packet)
             case cfg.realm_packets.CMD_AUTH_LOGON_PROOF:
-                self.handle_CMD_AUTH_LOGON_PROOF(packet)
+                return self.handle_CMD_AUTH_LOGON_PROOF(packet)
             case cfg.realm_packets.CMD_REALM_LIST:
-                self.handle_CMD_REALM_LIST(packet)
+                return self.handle_CMD_REALM_LIST(packet)
             case _:
                 cfg.logger.error(f'Received packet {packet.id:04X} in unexpected logonState')
 
@@ -86,6 +86,7 @@ class RealmPacketHandler:
             return
         target_realm['session_key'] = int.to_bytes(self.srp_handler.K, 40, 'little')
         cfg.realm = target_realm
+        return 1
 
     @staticmethod
     def parse_realm_list(packet):  # different for Vanilla/TBC+

@@ -17,6 +17,7 @@ class GameConnector(Connector):
 
     async def run(self):
         cfg.logger.info(f'Connecting to game server: {cfg.realm["name"]}')
+        cfg.logger.debug(f'Connecting to game server: {cfg.realm["name"]} - {cfg.realm["host"]}:{cfg.realm["port"]}')
         self.reader, self.writer = await asyncio.open_connection(cfg.realm['host'], cfg.realm['port'])
         self.main_task = asyncio.gather(self.receiver_coroutine(), self.sender_coroutine(), self.handler_coroutine())
         try:

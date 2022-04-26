@@ -8,7 +8,7 @@ class GamePacketEncoder:
         btarr = bytearray()
         btarr += int.to_bytes(len(packet.data) + header_size - 2, 2, 'big')
         btarr += int.to_bytes(packet.id, 2, 'little')
-        header = btarr if unencrypted else cfg.crypt.encrypt(int.to_bytes(0, 1, 'big') + btarr)
+        header = btarr if unencrypted else cfg.crypt.encrypt(btarr + bytearray(2))
         return header + packet.data
 
     @staticmethod

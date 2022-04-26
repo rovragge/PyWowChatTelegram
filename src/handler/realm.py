@@ -31,8 +31,8 @@ class RealmPacketHandler:
         byte_buff = PyByteBuffer.ByteBuffer.wrap(packet.data)
         byte_buff.get(1)  # error code
         result = byte_buff.get(1)
-        if not cfg.realm_packets.AUTH.is_success(result):
-            cfg.logger.error(cfg.realm_packets.get_message(result))
+        if not cfg.auth_results.is_success(result):
+            cfg.logger.error(cfg.auth_results.get_message(result))
             raise ValueError
 
         B = int.from_bytes(byte_buff.array(32), 'little')
@@ -62,7 +62,7 @@ class RealmPacketHandler:
     def handle_CMD_AUTH_LOGON_PROOF(self, packet):
         byte_buff = PyByteBuffer.ByteBuffer.wrap(packet.data)
         result = byte_buff.get(1)
-        if not cfg.realm_packets.AUTH.is_success(result):
+        if not cfg.auth_results.is_success(result):
             cfg.logger.error(cfg.realm_packets.get_message(result))
             return
         proof = byte_buff.array(20)

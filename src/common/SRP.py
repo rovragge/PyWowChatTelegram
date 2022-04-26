@@ -94,7 +94,7 @@ class SRPHandler:
             f'g = {self.g}\n\t'
             f'B = {self.B}\n\t'
             f'N = {self.N}\n\t'
-            f'salt = {self.salt}\n\t'
+            f's = {self.salt}\n\t'
             f'a = {self.a}\n\t'
             f'A = {int.from_bytes(self.A, "little")}\n\t'
             f'u = {self.u}\n\t'

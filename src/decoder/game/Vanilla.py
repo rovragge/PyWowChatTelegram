@@ -7,22 +7,30 @@ from src.common.packet import Packet
 class GamePacketDecoder:
     HEADER_LENGTH = 4
 
-    def decode(self, data):
-        buff = PyByteBuffer.ByteBuffer.wrap(data)
-        size = 0
-        packet_id = 0
-        if buff.remaining < GamePacketDecoder.HEADER_LENGTH:
-            cfg.logger.error(f'Game packet is less then {GamePacketDecoder.HEADER_LENGTH} bytes!')
-            return
-        if not size and not packet_id:
-            packet_id, size = self.parse_game_header_encrypted(
+    def __init__(self):
+        self.size = None
+        self.packet_id = None
+        self.remaining_data = None
+        self.incomplete_packet = False
+
+    def decode(self, buff):
+
+        if not self.size and not self.packet_id:
+            if buff.remaining < GamePacketDecoder.HEADER_LENGTH:
+                self.incomplete_packet = True
+                self.remaining_data = buff.array()
+                return
+            self.packet_id, self.size = self.parse_game_header_encrypted(
                 buff) if cfg.crypt.initialized else self.parse_game_header(buff)
-        if size > buff.remaining:
-            cfg.logger.error(f'Header size =  {size} while only {buff.remaining} bytes remaining')
+        if self.size > buff.remaining:
+            self.incomplete_packet = True
+            self.remaining_data = buff.array()
             return
-        packet_id, packet_data = self.decompress(packet_id, int.to_bytes(buff.get(size), size, 'big'))
-        packet = Packet(packet_id, packet_data)
-        cfg.logger.debug(f'RECV PACKET {packet}')
+        packet = Packet(*self.decompress(self.packet_id, buff.array(self.size)))
+        self.incomplete_packet = bool(buff.remaining)
+        self.remaining_data = None
+        self.size = None
+        self.packet_id = None
         return packet
 
     def parse_game_header(self, buff):

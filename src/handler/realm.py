@@ -98,8 +98,8 @@ class RealmPacketHandler:
             realm['is_pvp'] = bool(byte_buff.get(1)) if not_vanilla else None
             realm['lock_flag'] = bool(byte_buff.get(1)) if not_vanilla else None
             realm['flags'] = byte_buff.get(1)  # offline/recommended/for newbies
-            realm['name'] = self.read_string(byte_buff)
-            address = self.read_string(byte_buff).split(':')
+            realm['name'] = read_string(byte_buff)
+            address = read_string(byte_buff).split(':')
             realm['host'] = address[0]
             realm['port'] = int(address[1])
             realm['population'] = byte_buff.get(4)

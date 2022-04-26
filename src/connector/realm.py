@@ -20,7 +20,9 @@ class RealmConnector(Connector):
 
     async def run(self):
         host, port = cfg.parse_realm_list()
-        cfg.logger.info(f'Connecting to realm server: {host}:{port}')
+        await self.out_queue.put(self.get_initial_packet())
+        cfg.logger.info(f'Connecting to realm server: {host}')
+        cfg.logger.debug(f'Connecting to realm server: {host}:{port}')
         self.reader, self.writer = await asyncio.open_connection(host, port)
         self.main_task = asyncio.gather(self.receiver_coroutine(), self.sender_coroutine(), self.handler_coroutine())
         try:
@@ -28,12 +30,11 @@ class RealmConnector(Connector):
         except asyncio.exceptions.CancelledError:
             return
 
-    async def receiver(self):
-        self.handler.handle_packet(await self.receive(119))  # logon challenge
-        self.handler.handle_packet(await self.receive(32))  # logon proof
-        self.handler.handle_packet(await self.receive(4096))  # realms
-        self.writer.close()
-        self.sender_task.cancel('received last message from realm server')
+    def handle_result(self, result):
+        match result:
+            case 1:
+                self.writer.close()
+                self.main_task.cancel()
 
     def get_initial_packet(self):
         version = [bytes(x, 'utf-8') for x in cfg.version.split('.')]

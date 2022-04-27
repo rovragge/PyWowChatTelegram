@@ -47,7 +47,7 @@ class RealmPacketDecoder:
             self.remaining_data = buff.array()
             return
         packet = Packet(self.packet_id, buff.array(self.size))
-            self.incomplete_packet = bool(buff.remaining)
+        self.incomplete_packet = bool(buff.remaining)
         self.remaining_data = None
         self.size = None
         self.packet_id = None

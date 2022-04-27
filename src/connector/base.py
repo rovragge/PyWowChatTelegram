@@ -9,17 +9,12 @@ class Connector:
     RECV_SIZE = 8192
 
     def __init__(self):
-        # asyncio stream
         self.reader = None
         self.writer = None
-
         self.main_task = None
-
-        # packets
         self.decoder = None
         self.encoder = None
         self.handler = None
-        # packet queues
         self.in_queue = asyncio.Queue()
         self.out_queue = asyncio.Queue()
 

@@ -24,6 +24,7 @@ class _Config:
         self.build = self.get_build()
         self.expansion = self.get_expansion()
         self.server_MOTD_enabled = bool(xml_obj.wow.server_motd_enabled)
+        self.buff_size = int(xml_obj.wow.buff_size)
 
         self.realm = None
         self.game_packets = getattr(import_module(f'src.packets.game.{self.expansion}'), 'GamePackets')

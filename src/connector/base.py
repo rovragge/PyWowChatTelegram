@@ -6,7 +6,7 @@ from src.common.config import cfg
 
 
 class Connector:
-    RECV_SIZE = 8192
+    RECV_SIZE = cfg.buff_size
 
     def __init__(self):
         self.reader = None

@@ -1,2 +1,2 @@
 # PyWowChat
-Python port of Discord bot for WoW
+Python port of https://github.com/fjaros/wowchat

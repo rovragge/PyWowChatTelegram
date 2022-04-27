@@ -1,4 +1,8 @@
 import time
+import random
+import hashlib
+
+import PyByteBuffer
 
 from src.common.config import cfg
 from src.common.packet import Packet
@@ -57,13 +61,30 @@ class GamePacketHandler:
                 return self.handle_SMSG_GROUP_INVITE(packet)
 
     def handle_SMSG_AUTH_CHALLENGE(self, packet):
-        challenge = self.parse_auth_challenge(packet)
+        packet_data = self.parse_auth_challenge(packet)
         cfg.crypt.initialize(cfg.realm['session_key'])
-        self.out_queue.put_nowait(Packet(cfg.game_packets.CMSG_AUTH_CHALLENGE, challenge))
+        self.out_queue.put_nowait(Packet(cfg.game_packets.CMSG_AUTH_CHALLENGE, packet_data))
 
     def parse_auth_challenge(self, packet):
-        # TODO Vanilla parse_auth_challenge
-        return
+        account_bytes = bytes(cfg.account, 'utf-8')
+        client_seed = random.randbytes(4)
+        server_seed = int.to_bytes(packet.to_byte_buff().get(4), 4, 'big')
+        buff = PyByteBuffer.ByteBuffer.allocate(400)
+        buff.put(0)
+        buff.put(cfg.build, 4, 'little')
+        buff.put(account_bytes)
+        buff.put(0)
+        buff.put(client_seed)
+        md = hashlib.sha1(account_bytes)
+        md.update(bytearray(4))
+        md.update(client_seed)
+        md.update(server_seed)
+        md.update(cfg.realm['session_key'])
+        buff.put(md.digest())
+        buff.put(GamePacketHandler.ADDON_INFO)
+        buff.strip()
+        buff.rewind()
+        return buff.array()
 
     def handle_SMSG_AUTH_RESPONSE(self, packet):
         code = packet.data[0]

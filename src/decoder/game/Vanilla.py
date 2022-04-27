@@ -1,5 +1,3 @@
-import PyByteBuffer
-
 from src.common.config import cfg
 from src.common.packet import Packet
 
@@ -14,7 +12,6 @@ class GamePacketDecoder:
         self.incomplete_packet = False
 
     def decode(self, buff):
-
         if not self.size and not self.packet_id:
             if buff.remaining < GamePacketDecoder.HEADER_LENGTH:
                 self.incomplete_packet = True

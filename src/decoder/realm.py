@@ -1,5 +1,3 @@
-import PyByteBuffer
-
 from src.common.config import cfg
 from src.common.packet import Packet
 

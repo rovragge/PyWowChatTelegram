@@ -18,63 +18,64 @@ class GamePacketHandler(Vanilla.GamePacketHandler):
                  b'\xa6\x94\xb6\x98\x18\xc56\xca\xe8\x81aB\xf9\xeb\x07c\xab\x8b\xec'
 
     def handle_packet(self, packet):
+        data = packet.to_byte_buff()
         match packet.id:
             case cfg.game_packets.SMSG_GM_MESSAGECHAT:
-                return self.handle_SMSG_MESSAGECHAT(packet)
+                return self.handle_SMSG_MESSAGECHAT(data)
             case cfg.game_packets.SMSG_MOTD:
-                return self.handle_SMSG_MOTD(packet)
+                return self.handle_SMSG_MOTD(data)
             case cfg.game_packets.SMSG_TIME_SYNC_REQ:
-                return self.handle_SMSG_TIME_SYNC_REQ(packet)
+                return self.handle_SMSG_TIME_SYNC_REQ(data)
             case _:
                 return super().handle_packet(packet)
 
     @staticmethod
-    def get_equip_info(buff):
-        return buff.get(19 * 9, 'little')
+    def get_equip_info(data):
+        return data.get(19 * 9, 'little')
 
     @staticmethod
-    def get_bag_display_info(buff):
-        return buff.get(9, 'little')
+    def get_bag_display_info(data):
+        return data.get(9, 'little')
 
-    def handle_SMSG_MOTD(self, packet):
+    def handle_SMSG_MOTD(self, data):
         if cfg.server_MOTD_enabled:
-            messages = self.parse_server_MOTD(packet.to_byte_buff())
+            messages = self.parse_server_MOTD(data)
             for message in messages:
                 self.send_chat_message(message)
 
     @staticmethod
-    def parse_server_MOTD(buff):
-        n_of_messages = buff.get(4, 'little')
+    def parse_server_MOTD(data):
+        n_of_messages = data.get(4, 'little')
         messages = []
         for _ in range(n_of_messages):
-            message = {'guid': 0, 'tp': cfg.game_packets.CHAT_MSG_SYSTEM, 'text': read_string(buff), 'channel': None}
+            message = {'guid': 0, 'tp': cfg.game_packets.CHAT_MSG_SYSTEM, 'text': read_string(data), 'channel': None}
             messages.append(message)
         return messages
 
-    def parse_chat_message(self, packet):
+    def parse_chat_message(self, data):
         raise NotImplementedError
 
-    def parse_guild_roster(self, buff):
-        n_of_members = buff.get(4, 'little')
+    def parse_guild_roster(self, data):
+        n_of_members = data.get(4, 'little')
         members = {}
-        guild_motd = read_string(buff)
-        guild_info = read_string(buff)
-        n_of_ranks = buff.get(4, 'little')
+        guild_motd = read_string(data)
+        guild_info = read_string(data)
+        n_of_ranks = data.get(4, 'little')
         for _ in range(n_of_ranks):
-            rank_info = buff.get(8 + 48, 'little')  # TODO split into rank info and guild bank info
+            rank_info = data.get(8 + 48, 'little')  # TODO split into rank info and guild bank info
         for _ in range(n_of_members):
             member = {}
-            member['guid'] = buff.get(8, 'little')
-            member['is_online'] = bool(buff.get(1))
-            member['name'] = read_string(buff)
-            member['rank'] = buff.get(4, 'little')
-            member['level'] = buff.get(1)
-            member['class'] = buff.get(1)
-            buff.get(1)  # unknown
-            member['zone_id'] = buff.get(4, 'little')
-            member['last_logoff'] = 0 if member['is_online'] else buff.get(4, 'little')  # TODO needs to be float?
-            read_string(buff)
-            read_string(buff)
+            member['guid'] = data.get(8, 'little')
+            member['is_online'] = bool(data.get(1))
+            member['name'] = read_string(data)
+            member['rank'] = data.get(4, 'little')
+            member['level'] = data.get(1)
+            member['class'] = data.get(1)
+            data.get(1)  # unknown
+            member['zone_id'] = data.get(4, 'little')
+            member['last_logoff'] = 0 if member['is_online'] else data.get(4, 'little')  # TODO needs to be float?
+            read_string(data)
+            read_string(data)
             members[member['guid']] = member
         string = 'Guild members:' + ''.join([f'\n\t{m["name"]} Level {m["level"]} '
                                              f'{cfg.game_packets.get_class_str(m["class"])} '
@@ -83,8 +84,8 @@ class GamePacketHandler(Vanilla.GamePacketHandler):
         cfg.logger.debug(string)
         return members
 
-    def handle_SMSG_TIME_SYNC_REQ(self, packet):
-        counter = packet.to_byte_buff().get(4, 'little')
+    def handle_SMSG_TIME_SYNC_REQ(self, data):
+        counter = data.get(4, 'little')
         uptime = (time.time_ns() - self.connect_time) // 1000000
-        data = int.to_bytes(counter, 4, 'little') + int.to_bytes(uptime, 4, 'little')
-        self.out_queue.put_nowait(Packet(cfg.game_packets.CMSG_TIME_SYNC_RESP, data))
+        out_data = int.to_bytes(counter, 4, 'little') + int.to_bytes(uptime, 4, 'little')
+        self.out_queue.put_nowait(Packet(cfg.game_packets.CMSG_TIME_SYNC_RESP, out_data))

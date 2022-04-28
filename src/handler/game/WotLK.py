@@ -16,13 +16,12 @@ class GamePacketHandler(TBC.GamePacketHandler):
                  b'\x92/Y\x95O\xe2\xa0\x82\xfb-\xaa\xdfs\x9c`Ih\x80\xd6\xdb\xe5\t\xfa\x13\xb8B\x01\xdd\xc41n1\x0b' \
                  b'\xca_{{\x1c>\x9e\xe1\x93\xc8\x8d'
 
-    def parse_auth_challenge(self, packet):
-        in_buff = packet.to_byte_buff()
+    def parse_auth_challenge(self, data):
         buff = PyByteBuffer.ByteBuffer.allocate(400)
         bin_account = bytes(cfg.account, 'utf-8')
 
-        in_buff.get(4)
-        server_seed = in_buff.get(4, 'big')
+        data.get(4)
+        server_seed = data.get(4, 'big')
         client_seed = int.from_bytes(random.randbytes(4), 'big')
         buff.put(0, 2, 'little')
         buff.put(cfg.build, 4, 'little')
@@ -48,17 +47,17 @@ class GamePacketHandler(TBC.GamePacketHandler):
         return buff.array()
 
     @staticmethod
-    def get_bag_display_info(buff):
-        return buff.get(4 * 9, 'little')
+    def get_bag_display_info(data):
+        return data.get(4 * 9, 'little')
 
-    def parse_name_query(self, packet):
+    def parse_name_query(self, data):
         raise NotImplementedError
 
-    def parse_chat_message(self, packet):
+    def parse_chat_message(self, data):
         raise NotImplementedError
 
     def handle_achievement_event(self, guid, achievement_id):
         raise NotImplementedError
 
-    def unpack_guid(self, buff):
+    def unpack_guid(self, data):
         raise NotImplementedError

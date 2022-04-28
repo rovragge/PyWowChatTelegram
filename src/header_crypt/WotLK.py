@@ -1,7 +1,6 @@
 import hmac
 
 import src.common.config as config
-
 from src.common.RC4 import RC4
 from src.header_crypt import Vanilla
 

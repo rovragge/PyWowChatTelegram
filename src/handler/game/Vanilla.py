@@ -26,49 +26,52 @@ class GamePacketHandler:
         self.guild_info = None
 
     def handle_packet(self, packet):
+        data = packet.to_byte_buff()
         match packet.id:
             case cfg.game_packets.SMSG_AUTH_CHALLENGE:
-                return self.handle_SMSG_AUTH_CHALLENGE(packet)
+                return self.handle_SMSG_AUTH_CHALLENGE(data)
             case cfg.game_packets.SMSG_AUTH_RESPONSE:
-                return self.handle_SMSG_AUTH_RESPONSE(packet)
+                return self.handle_SMSG_AUTH_RESPONSE(data)
             case cfg.game_packets.SMSG_NAME_QUERY:
-                return self.handle_SMSG_NAME_QUERY(packet)
+                return self.handle_SMSG_NAME_QUERY(data)
             case cfg.game_packets.SMSG_CHAR_ENUM:
-                return self.handle_SMSG_CHAR_ENUM(packet)
+                return self.handle_SMSG_CHAR_ENUM(data)
             case cfg.game_packets.SMSG_LOGIN_VERIFY_WORLD:
-                return self.handle_SMSG_LOGIN_VERIFY_WORLD(packet)
+                return self.handle_SMSG_LOGIN_VERIFY_WORLD(data)
             case cfg.game_packets.SMSG_GUILD_QUERY:
-                return self.handle_SMSG_GUILD_QUERY(packet)
+                return self.handle_SMSG_GUILD_QUERY(data)
             case cfg.game_packets.SMSG_GUILD_EVENT:
-                return self.handle_SMSG_GUILD_EVENT(packet)
+                return self.handle_SMSG_GUILD_EVENT(data)
             case cfg.game_packets.SMSG_GUILD_ROSTER:
-                return self.handle_SMSG_GUILD_ROSTER(packet)
+                return self.handle_SMSG_GUILD_ROSTER(data)
             case cfg.game_packets.SMSG_MESSAGECHAT:
-                return self.handle_SMSG_MESSAGECHAT(packet)
+                return self.handle_SMSG_MESSAGECHAT(data)
             case cfg.game_packets.SMSG_CHANNEL_NOTIFY:
-                return self.handle_SMSG_CHANNEL_NOTIFY(packet)
+                return self.handle_SMSG_CHANNEL_NOTIFY(data)
             case cfg.game_packets.SMSG_NOTIFICATION:
-                return self.handle_SMSG_NOTIFICATION(packet)
+                return self.handle_SMSG_NOTIFICATION(data)
             case cfg.game_packets.SMSG_WHO:
-                return self.handle_SMSG_WHO(packet)
+                return self.handle_SMSG_WHO(data)
             case cfg.game_packets.SMSG_SERVER_MESSAGE:
-                return self.handle_SMSG_SERVER_MESSAGE(packet)
+                return self.handle_SMSG_SERVER_MESSAGE(data)
             case cfg.game_packets.SMSG_INVALIDATE_PLAYER:
-                return self.handle_SMSG_INVALIDATE_PLAYER(packet)
+                return self.handle_SMSG_INVALIDATE_PLAYER(data)
             case cfg.game_packets.SMSG_WARDEN_DATA:
-                return self.handle_SMSG_WARDEN_DATA(packet)
+                return self.handle_SMSG_WARDEN_DATA(data)
             case cfg.game_packets.SMSG_GROUP_INVITE:
-                return self.handle_SMSG_GROUP_INVITE(packet)
+                return self.handle_SMSG_GROUP_INVITE(data)
+            case _:
+                cfg.logger.error(f'No handling method for this type of packet: {packet.id}')
 
-    def handle_SMSG_AUTH_CHALLENGE(self, packet):
-        packet_data = self.parse_auth_challenge(packet)
+    def handle_SMSG_AUTH_CHALLENGE(self, data):
+        challenge = self.parse_auth_challenge(data)
         cfg.crypt.initialize(cfg.realm['session_key'])
-        self.out_queue.put_nowait(Packet(cfg.game_packets.CMSG_AUTH_CHALLENGE, packet_data))
+        self.out_queue.put_nowait(Packet(cfg.game_packets.CMSG_AUTH_CHALLENGE, challenge))
 
-    def parse_auth_challenge(self, packet):
+    def parse_auth_challenge(self, data):
         account_bytes = bytes(cfg.account, 'utf-8')
         client_seed = random.randbytes(4)
-        server_seed = int.to_bytes(packet.to_byte_buff().get(4), 4, 'big')
+        server_seed = int.to_bytes(data.get(4), 4, 'big')
         buff = PyByteBuffer.ByteBuffer.allocate(400)
         buff.put(0)
         buff.put(cfg.build, 4, 'little')
@@ -86,8 +89,8 @@ class GamePacketHandler:
         buff.rewind()
         return buff.array()
 
-    def handle_SMSG_AUTH_RESPONSE(self, packet):
-        code = packet.data[0]
+    def handle_SMSG_AUTH_RESPONSE(self, data):
+        code = data.get(1)
         if code == cfg.game_packets.AUTH_OK:
             cfg.logger.info('Successfully logged into game server')
             if not self.received_char_enum:
@@ -96,63 +99,62 @@ class GamePacketHandler:
             cfg.logger.error(cfg.auth_results.get_message(code))
             return
 
-    def handle_SMSG_CHAR_ENUM(self, packet):
+    def handle_SMSG_CHAR_ENUM(self, data):
         if self.received_char_enum:
             return
         self.received_char_enum = True
-        self.character = self.parse_char_enum(packet)
+        self.character = self.parse_char_enum(data)
         if not self.character:
             cfg.logger.error(f'Character {cfg.character} not found')
             return
         cfg.logger.info(f'Logging in with character {self.character["name"]}')
-        data = int.to_bytes(self.character['guid'], 8, 'little')
-        self.out_queue.put_nowait(Packet(cfg.game_packets.CMSG_PLAYER_LOGIN, data))
+        guid = int.to_bytes(self.character['guid'], 8, 'little')
+        self.out_queue.put_nowait(Packet(cfg.game_packets.CMSG_PLAYER_LOGIN, guid))
 
-    def parse_char_enum(self, packet):
-        buff = packet.to_byte_buff()
-        n_of_chars = buff.get(1)
+    def parse_char_enum(self, data):
+        n_of_chars = data.get(1)
         chars = []
         correct_char = None
         for _ in range(n_of_chars):
             char = {}
-            char['guid'] = buff.get(8, 'little')
-            char['name'] = read_string(buff)
+            char['guid'] = data.get(8, 'little')
+            char['name'] = read_string(data)
             if char['name'].lower() == cfg.character:
                 correct_char = char
-            char['race'] = buff.get(1)
-            char['class'] = buff.get(1)
-            char['gender'] = buff.get(1)
-            char['skin'] = buff.get(1)
-            char['face'] = buff.get(1)
-            char['hair_style'] = buff.get(1)
-            char['hair_color'] = buff.get(1)
-            char['facial hair'] = buff.get(1)
-            char['level'] = buff.get(1)
-            char['zone'] = buff.get(4, 'little')
-            char['map'] = buff.get(4, 'little')
-            char['x'] = buff.get(4, 'little')
-            char['y'] = buff.get(4, 'little')
-            char['z'] = buff.get(4, 'little')
-            char['guild_guid'] = buff.get(4, 'little')
-            char['flags'] = buff.get(4, 'little')
-            char['first_login'] = buff.get(1)
-            char['pet_info'] = buff.get(12, 'little')
-            char['equip_info'] = self.get_equip_info(buff)
-            char['bag_display_info'] = self.get_bag_display_info(buff)
+            char['race'] = data.get(1)
+            char['class'] = data.get(1)
+            char['gender'] = data.get(1)
+            char['skin'] = data.get(1)
+            char['face'] = data.get(1)
+            char['hair_style'] = data.get(1)
+            char['hair_color'] = data.get(1)
+            char['facial hair'] = data.get(1)
+            char['level'] = data.get(1)
+            char['zone'] = data.get(4, 'little')
+            char['map'] = data.get(4, 'little')
+            char['x'] = data.get(4, 'little')
+            char['y'] = data.get(4, 'little')
+            char['z'] = data.get(4, 'little')
+            char['guild_guid'] = data.get(4, 'little')
+            char['flags'] = data.get(4, 'little')
+            char['first_login'] = data.get(1)
+            char['pet_info'] = data.get(12, 'little')
+            char['equip_info'] = self.get_equip_info(data)
+            char['bag_display_info'] = self.get_bag_display_info(data)
             chars.append(char)
         string = 'Available characters:' + ''.join([f'\n\t{char["name"]}' for char in chars])
         cfg.logger.debug(string)
         return correct_char
 
     @staticmethod
-    def get_equip_info(buff):
-        return buff.get(19 * 5, 'little')
+    def get_equip_info(data):
+        return data.get(19 * 5, 'little')
 
     @staticmethod
-    def get_bag_display_info(buff):
-        return buff.get(5, 'little')
+    def get_bag_display_info(data):
+        return data.get(5, 'little')
 
-    def handle_SMSG_LOGIN_VERIFY_WORLD(self, packet):
+    def handle_SMSG_LOGIN_VERIFY_WORLD(self, data):
         if self.in_world:
             return
         self.in_world = True
@@ -160,8 +162,8 @@ class GamePacketHandler:
         if self.character['guild_guid']:
             self.update_roster()
             # query guild_name
-            data = int.to_bytes(self.character['guild_guid'], 4, 'little')
-            self.out_queue.put_nowait(Packet(cfg.game_packets.CMSG_GUILD_QUERY, data))
+            guid = int.to_bytes(self.character['guild_guid'], 4, 'little')
+            self.out_queue.put_nowait(Packet(cfg.game_packets.CMSG_GUILD_QUERY, guid))
         return 2
 
     def update_roster(self):
@@ -169,40 +171,42 @@ class GamePacketHandler:
             self.last_roster_update = time.time()
             self.out_queue.put_nowait(Packet(cfg.game_packets.CMSG_GUILD_ROSTER, b''))
 
-    def handle_SMSG_NAME_QUERY(self, packet):
+    def handle_SMSG_NAME_QUERY(self, data):
         pass
 
-    def handle_SMSG_GUILD_QUERY(self, packet):
+    def handle_SMSG_GUILD_QUERY(self, data):
+        data.get(4)
+        name = read_string(data)
+        # TODO ranks
+
+    def handle_SMSG_GUILD_EVENT(self, data):
         pass
 
-    def handle_SMSG_GUILD_EVENT(self, packet):
+    def handle_SMSG_GUILD_ROSTER(self, data):
         pass
 
-    def handle_SMSG_GUILD_ROSTER(self, packet):
+    def handle_SMSG_MESSAGECHAT(self, data):
         pass
 
-    def handle_SMSG_MESSAGECHAT(self, packet):
+    def handle_SMSG_CHANNEL_NOTIFY(self, data):
         pass
 
-    def handle_SMSG_CHANNEL_NOTIFY(self, packet):
+    def handle_SMSG_NOTIFICATION(self, data):
         pass
 
-    def handle_SMSG_NOTIFICATION(self, packet):
+    def handle_SMSG_WHO(self, data):
         pass
 
-    def handle_SMSG_WHO(self, packet):
+    def handle_SMSG_SERVER_MESSAGE(self, data):
         pass
 
-    def handle_SMSG_SERVER_MESSAGE(self, packet):
+    def handle_SMSG_INVALIDATE_PLAYER(self, data):
         pass
 
-    def handle_SMSG_INVALIDATE_PLAYER(self, packet):
+    def handle_SMSG_WARDEN_DATA(self, data):
         pass
 
-    def handle_SMSG_WARDEN_DATA(self, packet):
-        pass
-
-    def handle_SMSG_GROUP_INVITE(self, packet):
+    def handle_SMSG_GROUP_INVITE(self, data):
         pass
 
     def send_chat_message(self, message):

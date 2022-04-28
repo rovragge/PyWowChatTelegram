@@ -199,7 +199,22 @@ class GamePacketHandler:
         pass
 
     def handle_SMSG_SERVER_MESSAGE(self, data):
-        pass
+        tp = data.get(4, 'little')
+        text = read_string(data)
+        message = ChatMessage(0, cfg.game_packets.CHAT_MSG_SYSTEM, None, None)
+        match tp:
+            case cfg.game_packets.SERVER_MSG_SHUTDOWN_TIME:
+                message.text = f'Server shutdown in {text}'
+            case cfg.game_packets.SERVER_MSG_RESTART_TIME:
+                message.text= f'Server restart in {text}'
+            case cfg.game_packets.SERVER_MSG_SHUTDOWN_CANCELLED:
+                message.text= f'Server shutdown cancelled'
+            case cfg.game_packets.SERVER_MSG_RESTART_CANCELLED:
+                message.text = f'Server restart cancelled'
+            case _:
+                cfg.logger.error(f'Unknown type of server message: {tp} - {text}')
+                message.text = text
+        self.send_chat_message(message)
 
     def handle_SMSG_INVALIDATE_PLAYER(self, data):
         pass

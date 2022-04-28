@@ -1,10 +1,12 @@
-def read_string(buff):
+def read_string(buff, size=None):
     btarr = bytearray()
     while buff.remaining:
         byte = buff.get(1)
         if not byte:
             break
         btarr += int.to_bytes(byte, 1, 'big')
+        if size and len(btarr) == size:
+            break
     return btarr.decode('utf-8')
 
 

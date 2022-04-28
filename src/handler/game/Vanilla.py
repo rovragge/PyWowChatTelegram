@@ -206,9 +206,9 @@ class GamePacketHandler:
             case cfg.game_packets.SERVER_MSG_SHUTDOWN_TIME:
                 message.text = f'Server shutdown in {text}'
             case cfg.game_packets.SERVER_MSG_RESTART_TIME:
-                message.text= f'Server restart in {text}'
+                message.text = f'Server restart in {text}'
             case cfg.game_packets.SERVER_MSG_SHUTDOWN_CANCELLED:
-                message.text= f'Server shutdown cancelled'
+                message.text = f'Server shutdown cancelled'
             case cfg.game_packets.SERVER_MSG_RESTART_CANCELLED:
                 message.text = f'Server restart cancelled'
             case _:
@@ -217,7 +217,8 @@ class GamePacketHandler:
         self.send_chat_message(message)
 
     def handle_SMSG_INVALIDATE_PLAYER(self, data):
-        pass
+        guid = data.get(8, 'little')
+        del self.roster[guid]
 
     def handle_SMSG_WARDEN_DATA(self, data):
         pass

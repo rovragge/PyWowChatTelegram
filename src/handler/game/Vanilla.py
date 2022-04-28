@@ -193,7 +193,7 @@ class GamePacketHandler:
         pass
 
     def handle_SMSG_NOTIFICATION(self, data):
-        pass
+        cfg.logger.info(f'Notification: {read_string(data)}')
 
     def handle_SMSG_WHO(self, data):
         pass

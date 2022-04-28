@@ -7,7 +7,7 @@ import PyByteBuffer
 from src.common.config import cfg
 from src.common.packet import Packet
 from src.common.message import ChatMessage
-from src.common.utils import read_string
+import src.common.utils as utils
 
 
 class GamePacketHandler:
@@ -119,7 +119,7 @@ class GamePacketHandler:
         for _ in range(n_of_chars):
             char = {}
             char['guid'] = data.get(8, 'little')
-            char['name'] = read_string(data)
+            char['name'] = utils.read_string(data)
             if char['name'].lower() == cfg.character:
                 correct_char = char
             char['race'] = data.get(1)
@@ -162,7 +162,6 @@ class GamePacketHandler:
         cfg.logger.info('Successfully joined the world')
         if self.character['guild_guid']:
             self.update_roster()
-            # query guild_name
             guid = int.to_bytes(self.character['guild_guid'], 4, 'little')
             self.out_queue.put_nowait(Packet(cfg.game_packets.CMSG_GUILD_QUERY, guid))
         return 2
@@ -177,7 +176,7 @@ class GamePacketHandler:
 
     def handle_SMSG_GUILD_QUERY(self, data):
         data.get(4)
-        name = read_string(data)
+        name = utils.read_string(data)
         # TODO ranks
 
     def handle_SMSG_GUILD_EVENT(self, data):
@@ -187,11 +186,38 @@ class GamePacketHandler:
         pass
 
     def handle_SMSG_MESSAGECHAT(self, data):
-        pass
+        cfg.logger.info(f'Chat message: {utils.bytes_to_hex_str(data, True, True)}')
+        message = self.parse_chat_message(data)
+        self.send_chat_message(message)
+
+    def parse_chat_message(self, data):
+        tp = data.get(1)
+        lang = data.get(4, 'little')
+        if lang == -1:  # addon messages
+            return
+        if tp == cfg.game_packets.CHAT_MSG_CHANNEL:
+            channel_name = utils.read_string(data)
+            data.get(4)
+        else:
+            channel_name = None
+
+        # TODO Check if channel is handled
+
+        guid = data.get(8, 'little')
+        if tp != cfg.game_packets.CHAT_MSG_SYSTEM and guid == self.character['guid']:
+            return
+        match tp:
+            case cfg.game_packets.CHAT_MSG_SAY | cfg.game_packets.CHAT_MSG_YELL:
+                target_guid = data.get(8, 'little')
+            case _:
+                target_guid = None
+        text_len = data.get(4, 'little') - 1
+        text = utils.read_string(data, text_len)
+        return ChatMessage(guid, tp, text, channel_name)
 
     def handle_SMSG_CHANNEL_NOTIFY(self, data):
         tp = data.get(1)
-        channel_name = read_string(data)
+        channel_name = utils.read_string(data)
         match tp:
             case cfg.game_packets.CHAT_YOU_JOINED_NOTICE:
                 cfg.logger.info(f'Joined WOW chat channel {channel_name}')
@@ -213,14 +239,14 @@ class GamePacketHandler:
                 cfg.logger.error(f'Must be LFG before joining channel {channel_name}')
 
     def handle_SMSG_NOTIFICATION(self, data):
-        cfg.logger.info(f'Notification: {read_string(data)}')
+        cfg.logger.info(f'Notification: {utils.read_string(data)}')
 
     def handle_SMSG_WHO(self, data):
         pass
 
     def handle_SMSG_SERVER_MESSAGE(self, data):
         tp = data.get(4, 'little')
-        text = read_string(data)
+        text = utils.read_string(data)
         message = ChatMessage(0, cfg.game_packets.CHAT_MSG_SYSTEM, None, None)
         match tp:
             case cfg.game_packets.SERVER_MSG_SHUTDOWN_TIME:

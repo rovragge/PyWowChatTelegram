@@ -6,6 +6,7 @@ import PyByteBuffer
 
 from src.common.config import cfg
 from src.common.packet import Packet
+from src.common.message import ChatMessage
 from src.common.utils import read_string
 
 

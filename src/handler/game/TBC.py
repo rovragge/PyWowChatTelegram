@@ -1,6 +1,7 @@
 import time
 
 from src.common.config import cfg
+from src.common.message import ChatMessage
 from src.common.utils import read_string
 from src.common.packet import Packet
 from src.handler.game import Vanilla
@@ -48,7 +49,7 @@ class GamePacketHandler(Vanilla.GamePacketHandler):
         n_of_messages = data.get(4, 'little')
         messages = []
         for _ in range(n_of_messages):
-            message = {'guid': 0, 'tp': cfg.game_packets.CHAT_MSG_SYSTEM, 'text': read_string(data), 'channel': None}
+            message = ChatMessage(0, cfg.game_packets.CHAT_MSG_SYSTEM, read_string(data), None)
             messages.append(message)
         return messages
 

@@ -190,7 +190,27 @@ class GamePacketHandler:
         pass
 
     def handle_SMSG_CHANNEL_NOTIFY(self, data):
-        pass
+        tp = data.get(1)
+        channel_name = read_string(data)
+        match tp:
+            case cfg.game_packets.CHAT_YOU_JOINED_NOTICE:
+                cfg.logger.info(f'Joined WOW chat channel {channel_name}')
+            case cfg.game_packets.CHAT_WRONG_PASSWORD_NOTICE:
+                cfg.logger.error(f'Incorrect password for channel {channel_name}')
+            case cfg.game_packets.CHAT_MUTED_NOTICE:
+                cfg.logger.error(f'You do not have permission to speak in {channel_name}')
+            case cfg.game_packets.CHAT_BANNED_NOTICE:
+                cfg.logger.error(f'You are banned from channel {channel_name}')
+            case cfg.game_packets.CHAT_WRONG_FACTION_NOTICE:
+                cfg.logger.error(f'Wrong faction for channel {channel_name}')
+            case cfg.game_packets.CHAT_INVALID_NAME_NOTICE:
+                cfg.logger.error(f'Invalid channel name')
+            case cfg.game_packets.CHAT_THROTTLED_NOTICE:
+                cfg.logger.error(f'Wait to send another message to {channel_name}')
+            case cfg.game_packets.CHAT_NOT_IN_AREA_NOTICE:
+                cfg.logger.error(f'Not in the right area for channel {channel_name}')
+            case cfg.game_packets.CHAT_NOT_IN_LFG_NOTICE:
+                cfg.logger.error(f'Must be LFG before joining channel {channel_name}')
 
     def handle_SMSG_NOTIFICATION(self, data):
         cfg.logger.info(f'Notification: {read_string(data)}')

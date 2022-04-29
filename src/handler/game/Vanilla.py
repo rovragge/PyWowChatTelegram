@@ -10,6 +10,17 @@ from src.common.message import ChatMessage
 import src.common.utils as utils
 
 
+class Guild:
+    def __init__(self, guid):
+        self.guid = guid
+        self.name = ''
+        self.ranks = []
+        self.roster = {}
+
+    def __bool__(self):
+        return self.guid is not None
+
+
 class GamePacketHandler:
     ADDON_INFO = b'V\x01\x00\x00x\x9cu\xcc\xbd\x0e\xc20\x0c\x04\xe0\xf2\x1e\xbc\x0ca@\x95\xc8B\xc3\x8cL\xe2"\x0b\xc7' \
                  b'\xa9\x8c\xcbO\x9f\x1e\x16$\x06s\xebww\x81iY@\xcbi3g\xa3&\xc7\xbe[\xd5\xc7z\xdf}\x12\xbe\x16\xc0' \
@@ -62,7 +73,8 @@ class GamePacketHandler:
             case cfg.game_packets.SMSG_GROUP_INVITE:
                 return self.handle_SMSG_GROUP_INVITE(data)
             case _:
-                cfg.logger.error(f'No handling method for this type of packet: {packet.id}')
+                pass
+                # cfg.logger.error(f'No handling method for this type of packet: {hex(packet.id)}')
 
     def handle_SMSG_AUTH_CHALLENGE(self, data):
         challenge = self.parse_auth_challenge(data)
@@ -108,6 +120,7 @@ class GamePacketHandler:
         if not self.character:
             cfg.logger.error(f'Character {cfg.character} not found')
             return
+        self.guild = Guild(self.character['guild_guid'])
         cfg.logger.info(f'Logging in with character {self.character["name"]}')
         guid = int.to_bytes(self.character['guid'], 8, 'little')
         self.out_queue.put_nowait(Packet(cfg.game_packets.CMSG_PLAYER_LOGIN, guid))
@@ -160,9 +173,9 @@ class GamePacketHandler:
             return
         self.in_world = True
         cfg.logger.info('Successfully joined the world')
-        if self.character['guild_guid']:
+        if self.guild:
             self.update_roster()
-            guid = int.to_bytes(self.character['guild_guid'], 4, 'little')
+            guid = int.to_bytes(self.guild.guid, 4, 'little')
             self.out_queue.put_nowait(Packet(cfg.game_packets.CMSG_GUILD_QUERY, guid))
         return 2
 
@@ -176,14 +189,20 @@ class GamePacketHandler:
 
     def handle_SMSG_GUILD_QUERY(self, data):
         data.get(4)
-        name = utils.read_string(data)
-        # TODO ranks
+        self.guild.name = utils.read_string(data)
+        for _ in range(10):
+            rank = utils.read_string(data)
+            if rank:
+                self.guild.ranks.append(rank)
 
     def handle_SMSG_GUILD_EVENT(self, data):
         pass
 
     def handle_SMSG_GUILD_ROSTER(self, data):
-        pass
+        self.guild.roster = self.parse_roster(data)
+        log_message = 'Guild characters:' + ''.join([f'\n\t{char["name"]}' for char in self.guild.roster.values()])
+        cfg.logger.debug(log_message)
+        self.update_members_online()
 
     def parse_roster(self, data):
         members = {}
@@ -299,4 +318,8 @@ class GamePacketHandler:
         pass
 
     def send_chat_message(self, message):
+        pass
+
+    def update_members_online(self):
+        # TODO Update Discord status
         pass

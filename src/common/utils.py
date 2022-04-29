@@ -1,3 +1,6 @@
+from src.common.config import cfg
+
+
 def read_string(buff, size=None):
     btarr = bytearray()
     while buff.remaining:
@@ -7,7 +10,10 @@ def read_string(buff, size=None):
         btarr += int.to_bytes(byte, 1, 'big')
         if size and len(btarr) == size:
             break
-    return btarr.decode('utf-8')
+    try:
+        return btarr.decode('utf-8')
+    except UnicodeDecodeError:
+        cfg.logger.error(f'{size}; Cant decode {btarr}')
 
 
 def bytes_to_hex_str(data, add_spaces=True, resolve_plain_text=False):

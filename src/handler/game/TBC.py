@@ -2,7 +2,7 @@ import time
 
 from src.common.config import cfg
 from src.common.message import ChatMessage
-from src.common.utils import read_string
+from src.common import utils as utils
 from src.common.packet import Packet
 from src.handler.game import Vanilla
 
@@ -22,7 +22,7 @@ class GamePacketHandler(Vanilla.GamePacketHandler):
         data = packet.to_byte_buff()
         match packet.id:
             case cfg.game_packets.SMSG_GM_MESSAGECHAT:
-                return self.handle_SMSG_MESSAGECHAT(data)
+                return self.handle_SMSG_MESSAGECHAT(data, gm=True)
             case cfg.game_packets.SMSG_MOTD:
                 return self.handle_SMSG_MOTD(data)
             case cfg.game_packets.SMSG_TIME_SYNC_REQ:
@@ -49,40 +49,35 @@ class GamePacketHandler(Vanilla.GamePacketHandler):
         n_of_messages = data.get(4, 'little')
         messages = []
         for _ in range(n_of_messages):
-            message = ChatMessage(0, cfg.game_packets.CHAT_MSG_SYSTEM, read_string(data), None)
+            message = ChatMessage(0, cfg.game_packets.CHAT_MSG_SYSTEM, utils.read_string(data), None)
             messages.append(message)
         return messages
 
     def parse_chat_message(self, data):
         raise NotImplementedError
 
-    def parse_guild_roster(self, data):
-        n_of_members = data.get(4, 'little')
+    def parse_roster(self, data):
+        n_of_chars = data.get(4, 'little')
         members = {}
-        guild_motd = read_string(data)
-        guild_info = read_string(data)
+        guild_motd = utils.read_string(data)
+        guild_info = utils.read_string(data)
         n_of_ranks = data.get(4, 'little')
         for _ in range(n_of_ranks):
             rank_info = data.get(8 + 48, 'little')  # TODO split into rank info and guild bank info
-        for _ in range(n_of_members):
+        for _ in range(n_of_chars):
             member = {}
             member['guid'] = data.get(8, 'little')
             member['is_online'] = bool(data.get(1))
-            member['name'] = read_string(data)
+            member['name'] = utils.read_string(data)
             member['rank'] = data.get(4, 'little')
             member['level'] = data.get(1)
             member['class'] = data.get(1)
             data.get(1)  # unknown
             member['zone_id'] = data.get(4, 'little')
-            member['last_logoff'] = 0 if member['is_online'] else data.get(4, 'little')  # TODO needs to be float?
-            read_string(data)
-            read_string(data)
+            member['last_logoff'] = 0 if member['is_online'] else data.get(4, 'little')
+            utils.read_string(data)
+            utils.read_string(data)
             members[member['guid']] = member
-        string = 'Guild members:' + ''.join([f'\n\t{m["name"]} Level {m["level"]} '
-                                             f'{cfg.game_packets.get_class_str(m["class"])} '
-                                             f'{"Online" if m["is_online"] else "Last seen " + m["last_logoff"]}'
-                                             for m in members])
-        cfg.logger.debug(string)
         return members
 
     def handle_SMSG_TIME_SYNC_REQ(self, data):

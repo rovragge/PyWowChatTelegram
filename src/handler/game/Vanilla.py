@@ -23,8 +23,7 @@ class GamePacketHandler:
         self.in_world = False
         self.last_roster_update = None
         self.character = None
-        self.roster = None
-        self.guild_info = None
+        self.guild = None
 
     def handle_packet(self, packet):
         data = packet.to_byte_buff()
@@ -143,8 +142,8 @@ class GamePacketHandler:
             char['equip_info'] = self.get_equip_info(data)
             char['bag_display_info'] = self.get_bag_display_info(data)
             chars.append(char)
-        string = 'Available characters:' + ''.join([f'\n\t{char["name"]}' for char in chars])
-        cfg.logger.debug(string)
+        log_message = 'Available characters:' + ''.join([f'\n\t{char["name"]}' for char in chars])
+        cfg.logger.debug(log_message)
         return correct_char
 
     @staticmethod
@@ -185,12 +184,35 @@ class GamePacketHandler:
     def handle_SMSG_GUILD_ROSTER(self, data):
         pass
 
-    def handle_SMSG_MESSAGECHAT(self, data):
-        cfg.logger.info(f'Chat message: {utils.bytes_to_hex_str(data, True, True)}')
-        message = self.parse_chat_message(data)
-        self.send_chat_message(message)
+    def parse_roster(self, data):
+        members = {}
+        n_of_chars = data.get(4, 'little')
+        motd = utils.read_string(data)
+        guild_info = utils.read_string(data)
+        n_of_ranks = data.get(4, 'little')
+        for _ in range(n_of_ranks):
+            data.get(4)
+        for _ in range(n_of_chars):
+            member = {}
+            member['guid'] = data.get(8, 'little')
+            member['is_online'] = bool(data.get(1))
+            member['name'] = utils.read_string(data)
+            member['rank'] = data.get(4, 'little')
+            member['level'] = data.get(1)
+            member['class'] = data.get(1)
+            member['zone_id'] = data.get(4, 'little')
+            member['last_logoff'] = data.get(4, 'little') if not member['is_online'] else 0
+            utils.read_string(data)
+            utils.read_string(data)
+            members[member['guid']] = member
+        return members
 
-    def parse_chat_message(self, data):
+    def handle_SMSG_MESSAGECHAT(self, data, gm=False):
+        message = self.parse_chat_message(data, gm)
+        if message:
+            self.send_chat_message(message)
+
+    def parse_chat_message(self, data, gm):
         tp = data.get(1)
         lang = data.get(4, 'little')
         if lang == -1:  # addon messages

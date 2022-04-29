@@ -28,10 +28,10 @@ class Connector:
         while not self.writer.is_closing():
             try:
                 packet = await self.out_queue.get()
+                self.writer.write(self.encoder.encode(packet))
+                await self.writer.drain()
             except asyncio.exceptions.CancelledError:
                 break
-            self.writer.write(self.encoder.encode(packet))
-            await self.writer.drain()
             cfg.logger.debug(f'PACKET SENT: {packet}')
 
     async def receiver_coroutine(self):

@@ -64,7 +64,7 @@ class RealmPacketHandler:
         byte_buff = PyByteBuffer.ByteBuffer.wrap(packet.data)
         result = byte_buff.get(1)
         if not cfg.auth_results.is_success(result):
-            cfg.logger.error(cfg.realm_packets.get_message(result))
+            cfg.logger.error(cfg.auth_results.get_message(result))
             return
         proof = byte_buff.array(20)
         if proof != self.srp_handler.generate_hash_logon_proof():

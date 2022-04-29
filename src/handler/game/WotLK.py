@@ -3,6 +3,8 @@ import hashlib
 
 import PyByteBuffer
 
+import src.common.utils as utils
+from src.common.message import ChatMessage
 from src.common.config import cfg
 from src.handler.game import TBC
 
@@ -53,11 +55,36 @@ class GamePacketHandler(TBC.GamePacketHandler):
     def parse_name_query(self, data):
         raise NotImplementedError
 
-    def parse_chat_message(self, data):
-        raise NotImplementedError
+    def parse_chat_message(self, data, gm):
+        tp = data.get(1)
+        lang = data.get(4, 'little')
+        if lang == -1:  # addon messages
+            return
+        if lang == 4294967295:
+            pass
+        guid = data.get(8, 'little')
+        if tp != cfg.game_packets.CHAT_MSG_SYSTEM and guid == self.character['guid']:
+            return
+        data.get(4)
+        if gm:
+            data.get(4)
+            utils.read_string(data)
+
+        channel_name = utils.read_string(data) if tp == cfg.game_packets.CHAT_MSG_CHANNEL else None
+        # TODO Check if channel is handled or is an achievement message
+        data.get(8, 'little')  # guid again
+        text_len = data.get(4, 'little') - 1
+        text = utils.read_string(data, text_len)
+        data.get(2)  # null terminator + chat tag
+        if tp == cfg.game_packets.CHAT_MSG_GUILD_ACHIEVEMENT:
+            self.handle_achievement_event(guid, data.get(4, 'little'))
+        else:
+            msg = ChatMessage(guid, tp, text, channel_name)
+            cfg.logger.info(f'Chat message: {lang} {guid} {tp} {msg.text} {channel_name}')
+            return msg
 
     def handle_achievement_event(self, guid, achievement_id):
-        raise NotImplementedError
+        pass
 
     def unpack_guid(self, data):
         raise NotImplementedError

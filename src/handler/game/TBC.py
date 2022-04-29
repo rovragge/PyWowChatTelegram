@@ -53,8 +53,18 @@ class GamePacketHandler(Vanilla.GamePacketHandler):
             messages.append(message)
         return messages
 
-    def parse_chat_message(self, data):
-        raise NotImplementedError
+    def parse_chat_message(self, data, gm):
+        tp = data.get(1)
+        lang = data.get(4, 'little')
+        guid = data.get(8, 'little')
+        if tp != cfg.game_packets.CHAT_MSG_SYSTEM and guid == self.character['guid']:
+            return
+        data.get(4)
+        channel_name = utils.read_string(data) if tp == cfg.game_packets.CHAT_MSG_CHANNEL else None
+        data.get(8, 'little')  # guid
+        txt_len = data.get(4, 'little') - 1
+        text = utils.read_string(data, txt_len)
+        return ChatMessage(guid, tp, text, channel_name)
 
     def parse_roster(self, data):
         n_of_chars = data.get(4, 'little')

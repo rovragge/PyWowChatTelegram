@@ -13,10 +13,10 @@ def read_string(buff, size=None):
 def bytes_to_hex_str(data, add_spaces=True, resolve_plain_text=False):
     string = ''
     for byte in data:
-        if resolve_plain_text and 0x20 <= byte >= 0x7f:
-            string += byte + ' '
+        if resolve_plain_text and 32 <= byte < 127:
+            string += int.to_bytes(byte, 1, 'big').decode('utf-8')
         else:
             string += f'{byte:02X}'
         if add_spaces:
             string += ' '
-    return string
+    return string.strip()

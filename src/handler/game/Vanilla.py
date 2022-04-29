@@ -22,6 +22,7 @@ class GamePacketHandler:
         self.received_char_enum = False
         self.in_world = False
         self.last_roster_update = None
+        self.player_roster = {}
         self.character = None
         self.guild = None
 
@@ -286,7 +287,10 @@ class GamePacketHandler:
 
     def handle_SMSG_INVALIDATE_PLAYER(self, data):
         guid = data.get(8, 'little')
-        del self.roster[guid]
+        try:
+            del self.player_roster[guid]
+        except KeyError:
+            cfg.logger.debug(f'Can\'t remove guid {guid} from player roster')
 
     def handle_SMSG_WARDEN_DATA(self, data):
         pass

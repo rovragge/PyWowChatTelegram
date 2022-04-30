@@ -53,7 +53,20 @@ class GamePacketHandler(TBC.GamePacketHandler):
         return data.get(4 * 9, 'little')
 
     def parse_name_query(self, data):
-        raise NotImplementedError
+        guid = self.unpack_guid(data)
+        name_known = data.get(1)
+        if not name_known:
+            name = utils.read_string(data)
+            cross_name = utils.read_string(data)
+            race = data.get(1)
+            gender = data.get(1)
+            char_class = data.get(1)
+        else:
+            cfg.logger.error(f'Name not known for player guid {guid}')
+            name = 'UNKNOWN'
+            char_class = b'\xff'
+        msg = {'guid': guid, 'name': name, 'class': char_class}
+        return msg
 
     def parse_chat_message(self, data, gm):
         tp = data.get(1)

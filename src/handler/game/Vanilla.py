@@ -185,7 +185,18 @@ class GamePacketHandler:
             self.out_queue.put_nowait(Packet(cfg.game_packets.CMSG_GUILD_ROSTER, b''))
 
     def handle_SMSG_NAME_QUERY(self, data):
-        pass
+        name_query_message = self.parse_name_query(data)
+        # TODO queued  chat messages
+
+    def parse_name_query(self, data):
+        guid = data.get(8, 'little')
+        name = utils.read_string(data)
+        cross_name = utils.read_string(data)
+        race = data.get(4, 'little')
+        gender = data.get(4, 'little')
+        char_class = int.to_bytes(data.get(4, 'little'), 4, 'little')
+        msg = {'guid': guid, 'name': name, 'class': char_class}
+        return msg
 
     def handle_SMSG_GUILD_QUERY(self, data):
         data.get(4)
@@ -196,7 +207,40 @@ class GamePacketHandler:
                 self.guild.ranks.append(rank)
 
     def handle_SMSG_GUILD_EVENT(self, data):
-        pass
+        event = data.get(1)
+        n_of_strings = data.get(1)
+        messages = []
+        for _ in range(n_of_strings):
+            messages.append(utils.read_string(data))
+        self.handle_guild_event(event, messages)
+
+    def handle_guild_event(self, event, messages):
+        if not list(filter(bool, messages)):
+            return
+        if event != cfg.game_packets.GE_MOTD and cfg.character.lower() == messages[0].lower():
+            return
+        event_config_key = None
+        match event:
+            case cfg.game_packets.GE_PROMOTED:
+                event_config_key = 'promoted'
+            case cfg.game_packets.GE_DEMOTED:
+                cfg.game_packets.GE = 'demoted'
+            case cfg.game_packets.GE_MOTD:
+                event_config_key = 'motd'
+            case cfg.game_packets.GE_JOINED:
+                event_config_key = 'joined'
+            case cfg.game_packets.GE_LEFT:
+                event_config_key = 'left'
+            case cfg.game_packets.GE_REMOVED:
+                event_config_key = 'removed'
+            case cfg.game_packets.GE_SIGNED_ON:
+                event_config_key = 'online'
+            case cfg.game_packets.GE_SIGNED_OFF:
+                event_config_key = 'offline'
+            case _:
+                cfg.logger.error(f'Unknown guild event type {hex(event)}')
+                return
+        guild_notifiation_config = None
 
     def handle_SMSG_GUILD_ROSTER(self, data):
         self.guild.roster = self.parse_roster(data)

@@ -43,7 +43,7 @@ class Connector:
                     raise ValueError
                 if self.decoder.remaining_data:
                     data = self.decoder.remaining_data + data
-                buff = PyByteBuffer.ByteBuffer.wrap(data)
+                buff = PyByteBuffer.ByteBuffer.wrap(data)  # While loop accesses same buffer each time
                 while True:
                     packet = self.decoder.decode(buff)
                     if packet:
@@ -51,7 +51,7 @@ class Connector:
                         await self.in_queue.put(packet)
                         if not self.decoder.incomplete_packet:
                             break
-                    elif self.decoder.incomplete_packet:
+                    else:
                         break
             except asyncio.exceptions.CancelledError:
                 break

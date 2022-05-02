@@ -82,7 +82,6 @@ class GamePacketHandler(TBC.GamePacketHandler):
         if gm:
             data.get(4)
             utils.read_string(data)
-
         channel_name = utils.read_string(data) if tp == cfg.game_packets.CHAT_MSG_CHANNEL else None
         # TODO Check if channel is handled or is an achievement message
         data.get(8, 'little')  # guid again
@@ -93,7 +92,7 @@ class GamePacketHandler(TBC.GamePacketHandler):
             self.handle_achievement_event(guid, data.get(4, 'little'))
         else:
             msg = ChatMessage(guid, tp, text, channel_name)
-            cfg.logger.info(f'Chat message: {lang} {guid} {tp} {msg.text} {channel_name}')
+            cfg.logger.info(f'Chat message: {msg.text}')
             return msg
 
     def handle_achievement_event(self, guid, achievement_id):

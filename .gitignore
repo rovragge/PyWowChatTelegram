@@ -128,7 +128,7 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# Java implementation
+# Custom
 /wowchat_java
-# PyCharm
 /.idea
+/logs

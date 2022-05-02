@@ -367,3 +367,19 @@ class GamePacketHandler:
     def update_members_online(self):
         # TODO Update Discord status
         pass
+
+    def send_message_to_wow(self, tp, message, target=None):
+        buff = PyByteBuffer.ByteBuffer.allocate(8192)
+        buff.put(tp)
+        buff.put(self.character['language'])
+        if target:
+            buff.put(bytes(target, 'utf-8'))
+            buff.put(0)
+        buff.put(bytes(message, 'utf-8'))
+        buff.put(0)
+        buff.strip()
+        buff.rewind()
+        self.out_queue.put_nowait(Packet(cfg.game_packets.CMSG_MESSAGECHAT, buff.array()))
+
+    def send_notification(self, message):
+        self.send_message_to_wow(cfg.game_packets.CHAT_MSG_GUILD, message)

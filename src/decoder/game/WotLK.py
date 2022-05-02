@@ -3,7 +3,7 @@ from src.decoder.game import Vanilla
 
 
 class GamePacketDecoder(Vanilla.GamePacketDecoder):
-    def parse_game_header_encrypted(self, buff):
+    def parse_encrypted_header(self, buff):
         header = int.to_bytes(buff.get(GamePacketDecoder.HEADER_LENGTH), GamePacketDecoder.HEADER_LENGTH, 'big')
         decrypted = cfg.crypt.decrypt(header)
 

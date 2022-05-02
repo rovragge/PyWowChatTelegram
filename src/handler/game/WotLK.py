@@ -71,10 +71,8 @@ class GamePacketHandler(TBC.GamePacketHandler):
     def parse_chat_message(self, data, gm):
         tp = data.get(1)
         lang = data.get(4, 'little')
-        if lang == -1:  # addon messages
+        if lang == -1 or lang == 4294967295:  # addon messages and questionable stuff
             return
-        if lang == 4294967295:
-            pass
         guid = data.get(8, 'little')
         if tp != cfg.game_packets.CHAT_MSG_SYSTEM and guid == self.character['guid']:
             return

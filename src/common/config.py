@@ -27,12 +27,21 @@ class _Config:
         self.server_MOTD_enabled = bool(xml_obj.wow.server_motd_enabled)
         self.buff_size = int(xml_obj.wow.buff_size)
 
+        self.discord = None
         self.realm = None
         self.game_packets = getattr(import_module(f'src.packets.game.{self.expansion}'), 'GamePackets')
         self.realm_packets = getattr(import_module('src.packets.realm'), 'RealmPackets')
         self.auth_results = getattr(import_module('src.packets.auth'), 'AuthResults')
         self.crypt = getattr(import_module(f'src.header_crypt.{self.expansion}'), 'GameHeaderCrypt')()
 
+        self.guild_events = {self.game_packets.GE_SIGNED_ON: bool(xml_obj.guild_events.online),
+                             self.game_packets.GE_SIGNED_OFF: bool(xml_obj.guild_events.offline),
+                             self.game_packets.GE_JOINED: bool(xml_obj.guild_events.joined),
+                             self.game_packets.GE_LEFT: bool(xml_obj.guild_events.left),
+                             self.game_packets.GE_REMOVED: bool(xml_obj.guild_events.removed),
+                             self.game_packets.GE_PROMOTED: bool(xml_obj.guild_events.promoted),
+                             self.game_packets.GE_DEMOTED: bool(xml_obj.guild_events.demoted),
+                             self.game_packets.GE_MOTD: bool(xml_obj.guild_events.motd)}
         self.logger.debug('Config values:\n\t'
                           # f'account = {self.account}\n\t'
                           # f'password = {self.password}\n\t'

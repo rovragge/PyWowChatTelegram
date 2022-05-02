@@ -136,6 +136,7 @@ class GamePacketHandler:
             if char['name'].lower() == cfg.character:
                 correct_char = char
             char['race'] = data.get(1)
+            char['language'] = cfg.game_packets.get_language(char['race'])
             char['class'] = data.get(1)
             char['gender'] = data.get(1)
             char['skin'] = data.get(1)
@@ -210,38 +211,37 @@ class GamePacketHandler:
     def handle_SMSG_GUILD_EVENT(self, data):
         event = data.get(1)
         n_of_strings = data.get(1)
-        messages = []
-        for _ in range(n_of_strings):
-            messages.append(utils.read_string(data))
+        messages = [utils.read_string(data) for _ in range(n_of_strings)]
         self.handle_guild_event(event, messages)
+        self.update_roster()
 
-    def handle_guild_event(self, event, messages):
+    @staticmethod
+    def handle_guild_event(event, messages):
+        if not cfg.guild_events[event]:
+            return
         if not list(filter(bool, messages)):
             return
         if event != cfg.game_packets.GE_MOTD and cfg.character.lower() == messages[0].lower():
             return
-        event_config_key = None
         match event:
-            case cfg.game_packets.GE_PROMOTED:
-                event_config_key = 'promoted'
-            case cfg.game_packets.GE_DEMOTED:
-                cfg.game_packets.GE = 'demoted'
-            case cfg.game_packets.GE_MOTD:
-                event_config_key = 'motd'
+            case cfg.game_packets.SIGNED_ON:
+                msg = f'{messages[0]} has come online'
+            case cfg.game_packets.SIGNED_OFF:
+                msg = f'{messages[0]} has come offline'
             case cfg.game_packets.GE_JOINED:
-                event_config_key = 'joined'
+                msg = f'{messages[0]} has joined the guild'
             case cfg.game_packets.GE_LEFT:
-                event_config_key = 'left'
+                msg = f'{messages[0]} has left the guild'
+            case cfg.game_packets.GE_PROMOTED:
+                msg = f'{messages[0]} has promoted {messages[1]} to {messages[2]}'
+            case cfg.game_packets.GE_DEMOTED:
+                msg = f'{messages[0]} has demoted {messages[1]} to {messages[2]}'
             case cfg.game_packets.GE_REMOVED:
-                event_config_key = 'removed'
-            case cfg.game_packets.GE_SIGNED_ON:
-                event_config_key = 'online'
-            case cfg.game_packets.GE_SIGNED_OFF:
-                event_config_key = 'offline'
-            case _:
-                cfg.logger.error(f'Unknown guild event type {hex(event)}')
-                return
-        guild_notifiation_config = None
+                msg = f'{messages[1]} has kicked {messages[0]} from the guild'
+            case cfg.game_packets.GE_MOTD:
+                msg = f'Guild Message of the Day: {messages[1]}'
+
+        # TODO Send notification to discord
 
     def handle_SMSG_GUILD_ROSTER(self, data):
         self.guild.roster = self.parse_roster(data)
@@ -302,7 +302,8 @@ class GamePacketHandler:
         text = utils.read_string(data, text_len)
         return ChatMessage(guid, tp, text, channel_name)
 
-    def handle_SMSG_CHANNEL_NOTIFY(self, data):
+    @staticmethod
+    def handle_SMSG_CHANNEL_NOTIFY(data):
         tp = data.get(1)
         channel_name = utils.read_string(data)
         match tp:
@@ -325,7 +326,8 @@ class GamePacketHandler:
             case cfg.game_packets.CHAT_NOT_IN_LFG_NOTICE:
                 cfg.logger.error(f'Must be LFG before joining channel {channel_name}')
 
-    def handle_SMSG_NOTIFICATION(self, data):
+    @staticmethod
+    def handle_SMSG_NOTIFICATION(data):
         cfg.logger.info(f'Notification: {utils.read_string(data)}')
 
     def handle_SMSG_WHO(self, data):

@@ -201,6 +201,7 @@ class GamePacketHandler:
     def handle_SMSG_GUILD_QUERY(self, data):
         data.get(4)
         self.guild.name = utils.read_string(data)
+        self.guild.ranks = []
         for _ in range(10):
             rank = utils.read_string(data)
             if rank:

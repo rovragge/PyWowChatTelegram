@@ -1,4 +1,5 @@
 import asyncio
+import socket
 
 import PyByteBuffer
 
@@ -23,7 +24,11 @@ class RealmConnector(Connector):
         await self.out_queue.put(self.get_initial_packet())
         cfg.logger.info(f'Connecting to realm server: {host}')
         cfg.logger.debug(f'Connecting to realm server: {host}:{port}')
-        self.reader, self.writer = await asyncio.open_connection(host, port)
+        try:
+            self.reader, self.writer = await asyncio.open_connection(host, port)
+        except socket.gaierror:
+            cfg.logger.critical('Can\'t establish connection')
+            exit(1)
         self.main_task = asyncio.gather(self.receiver_coroutine(), self.sender_coroutine(), self.handler_coroutine())
         try:
             await self.main_task

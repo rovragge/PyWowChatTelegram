@@ -5,7 +5,7 @@ from importlib import import_module
 from src.common.config import cfg
 from src.common.packet import Packet
 from src.connector.base import Connector
-
+import socket
 
 class GameConnector(Connector):
 
@@ -18,7 +18,11 @@ class GameConnector(Connector):
     async def run(self):
         cfg.logger.info(f'Connecting to game server: {cfg.realm["name"]}')
         cfg.logger.debug(f'Connecting to game server: {cfg.realm["name"]} - {cfg.realm["host"]}:{cfg.realm["port"]}')
-        self.reader, self.writer = await asyncio.open_connection(cfg.realm['host'], cfg.realm['port'])
+        try:
+            self.reader, self.writer = await asyncio.open_connection(cfg.realm['host'], cfg.realm['port'])
+        except socket.gaierror:
+            cfg.logger.critical('Can\'t establish  connection')
+            exit(1)
         self.main_task = asyncio.gather(self.receiver_coroutine(), self.sender_coroutine(), self.handler_coroutine())
         try:
             await self.main_task

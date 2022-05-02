@@ -1,5 +1,6 @@
 import logging
 import os
+import datetime
 import sys
 
 import lxml.objectify
@@ -58,9 +59,18 @@ class _Config:
                 log.setLevel(logging.INFO)
             case 'debug' | _:
                 log.setLevel(logging.DEBUG)
-        handler = logging.StreamHandler(sys.stdout)
-        handler.setFormatter(logging.Formatter(str(logger_cfg.format)))
-        log.addHandler(handler)
+        handlers = []
+        if logger_cfg.to_file:
+            now = datetime.datetime.now()
+            filename = f'PyWowChat_{now.date()}_{now.time().hour}-{now.time().minute}-{now.time().second}.log'
+            path = os.path.join(os.path.dirname(sys.argv[0]), 'logs', filename)
+            handlers.append(logging.FileHandler(path))
+        if logger_cfg.to_stdout:
+            handlers.append(logging.StreamHandler(sys.stdout))
+        log_format = str(logger_cfg.format)
+        for handler in handlers:
+            handler.setFormatter(logging.Formatter(log_format))
+            log.addHandler(handler)
         return log
 
     def parse_realm_list(self):

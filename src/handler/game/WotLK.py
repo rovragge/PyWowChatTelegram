@@ -24,8 +24,8 @@ class GamePacketHandler(TBC.GamePacketHandler):
 
         data.get(4)
         server_seed = data.get(4, 'big')
-        client_seed = int.from_bytes(random.randbytes(4), 'big')
-        buff.put(0, 2, 'little')
+        client_seed = int.from_bytes(secrets.token_bytes(4), 'big')
+        buff.put(0, 2)
         buff.put(cfg.build, 4, 'little')
         buff.put(0, 4, 'little')
         buff.put(bin_account)

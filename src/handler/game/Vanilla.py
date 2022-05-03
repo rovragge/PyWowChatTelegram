@@ -1,5 +1,5 @@
 import time
-import random
+import secrets
 import hashlib
 
 import PyByteBuffer
@@ -83,7 +83,7 @@ class GamePacketHandler:
 
     def parse_auth_challenge(self, data):
         account_bytes = bytes(cfg.account, 'utf-8')
-        client_seed = random.randbytes(4)
+        client_seed = secrets.token_bytes(4)
         server_seed = int.to_bytes(data.get(4), 4, 'big')
         buff = PyByteBuffer.ByteBuffer.allocate(400)
         buff.put(0)

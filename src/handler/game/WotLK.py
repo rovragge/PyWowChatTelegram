@@ -94,7 +94,14 @@ class GamePacketHandler(TBC.GamePacketHandler):
             return msg
 
     def handle_achievement_event(self, guid, achievement_id):
-        pass
+        if not self.guild:
+            cfg.logger.error('Received achievement event, but not in guild')
+            return
+        player = self.guild.roster.get(guid)
+        if not player:
+            cfg.logger.error(f'Received achievement event, but no player with guid {guid} in roster')
+            return
+        # TODO send discord notification (player.name, achievement_id)
 
     def unpack_guid(self, data):
         raise NotImplementedError

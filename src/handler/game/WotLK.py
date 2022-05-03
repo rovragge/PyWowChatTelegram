@@ -1,4 +1,4 @@
-import random
+import secrets
 import hashlib
 
 import PyByteBuffer
@@ -29,11 +29,9 @@ class GamePacketHandler(TBC.GamePacketHandler):
         buff.put(cfg.build, 4, 'little')
         buff.put(0, 4, 'little')
         buff.put(bin_account)
-        buff.put(0)
-        buff.put(0, 4, 'big')
+        buff.put(0, 5)
         buff.put(client_seed)
-        buff.put(0, 4, 'little')
-        buff.put(0, 4, 'little')
+        buff.put(0, 8)
         buff.put(cfg.realm['id'], 4, 'little')
         buff.put(3, 8, 'little')
 
@@ -42,6 +40,7 @@ class GamePacketHandler(TBC.GamePacketHandler):
         md.update(int.to_bytes(client_seed, 4, 'big'))
         md.update(int.to_bytes(server_seed, 4, 'big'))
         md.update(cfg.realm['session_key'])
+
         buff.put(md.digest())
         buff.put(GamePacketHandler.ADDON_INFO)
         buff.strip()

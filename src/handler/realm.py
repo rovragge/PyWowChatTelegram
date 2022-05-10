@@ -19,11 +19,11 @@ class RealmPacketHandler:
             cfg.logger.error(f'packet is instance of {type(packet)}')
             return
         match packet.id:
-            case cfg.realm_packets.CMD_AUTH_LOGON_CHALLENGE:
+            case cfg.codes.realm_headers.AUTH_LOGON_CHALLENGE:
                 return self.handle_CMD_AUTH_LOGON_CHALLENGE(packet)
-            case cfg.realm_packets.CMD_AUTH_LOGON_PROOF:
+            case cfg.codes.realm_headers.AUTH_LOGON_PROOF:
                 return self.handle_CMD_AUTH_LOGON_PROOF(packet)
-            case cfg.realm_packets.CMD_REALM_LIST:
+            case cfg.codes.realm_headers.REALM_LIST:
                 return self.handle_CMD_REALM_LIST(packet)
             case _:
                 cfg.logger.error(f'Received packet {packet.id:04X} in unexpected logonState')
@@ -32,8 +32,8 @@ class RealmPacketHandler:
         byte_buff = PyByteBuffer.ByteBuffer.wrap(packet.data)
         byte_buff.get(1)  # error code
         result = byte_buff.get(1)
-        if not cfg.auth_results.is_success(result):
-            cfg.logger.error(cfg.auth_results.get_message(result))
+        if not cfg.codes.realm_server_auth_results.is_success(result):
+            cfg.logger.error(cfg.codes.realm_server_auth_results.get_str(result))
             raise ValueError
 
         B = int.from_bytes(byte_buff.array(32), 'little')
@@ -57,14 +57,14 @@ class RealmPacketHandler:
         buff += md.digest()
 
         buff += int.to_bytes(0, 2, 'big')
-        packet = Packet(cfg.realm_packets.CMD_AUTH_LOGON_PROOF, buff)
+        packet = Packet(cfg.codes.realm_headers.AUTH_LOGON_PROOF, buff)
         self.out_queue.put_nowait(packet)
 
     def handle_CMD_AUTH_LOGON_PROOF(self, packet):
         byte_buff = PyByteBuffer.ByteBuffer.wrap(packet.data)
         result = byte_buff.get(1)
-        if not cfg.auth_results.is_success(result):
-            cfg.logger.error(cfg.auth_results.get_message(result))
+        if not cfg.codes.realm_server_auth_results.is_success(result):
+            cfg.logger.error(cfg.codes.realm_server_auth_results.get_str(result))
             return
         proof = byte_buff.array(20)
         if proof != self.srp_handler.generate_hash_logon_proof():
@@ -74,7 +74,7 @@ class RealmPacketHandler:
         else:
             byte_buff.get(4)  # account flag
             cfg.logger.info(f'Successfully logged into realm server')
-            packet = Packet(cfg.realm_packets.CMD_REALM_LIST, int.to_bytes(0, 4, 'big'))
+            packet = Packet(cfg.codes.realm_headers.REALM_LIST, int.to_bytes(0, 4, 'big'))
             self.out_queue.put_nowait(packet)
 
     def handle_CMD_REALM_LIST(self, packet):

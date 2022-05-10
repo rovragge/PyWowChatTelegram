@@ -60,7 +60,7 @@ class RealmConnector(Connector):
         buffer.put(account)
         buffer.strip()
         buffer.rewind()
-        return Packet(cfg.realm_packets.CMD_AUTH_LOGON_CHALLENGE, buffer.array())
+        return Packet(cfg.codes.realm_headers.AUTH_LOGON_CHALLENGE, buffer.array())
 
     @staticmethod
     def str_to_int(string):

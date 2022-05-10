@@ -21,11 +21,11 @@ class GamePacketHandler(Vanilla.GamePacketHandler):
     def handle_packet(self, packet):
         data = packet.to_byte_buff()
         match packet.id:
-            case cfg.game_packets.SMSG_GM_MESSAGECHAT:
+            case cfg.codes.server_headers.GM_MESSAGECHAT:
                 return self.handle_SMSG_MESSAGECHAT(data, gm=True)
-            case cfg.game_packets.SMSG_MOTD:
+            case cfg.codes.server_headers.MOTD:
                 return self.handle_SMSG_MOTD(data)
-            case cfg.game_packets.SMSG_TIME_SYNC_REQ:
+            case cfg.codes.server_headers.TIME_SYNC_REQ:
                 return self.handle_SMSG_TIME_SYNC_REQ(data)
             case _:
                 return super().handle_packet(packet)
@@ -49,7 +49,7 @@ class GamePacketHandler(Vanilla.GamePacketHandler):
         n_of_messages = data.get(4, 'little')
         messages = []
         for _ in range(n_of_messages):
-            message = ChatMessage(0, cfg.game_packets.CHAT_MSG_SYSTEM, utils.read_string(data), None)
+            message = ChatMessage(0, cfg.codes.chat_channels.SYSTEM, utils.read_string(data), None)
             messages.append(message)
         return messages
 
@@ -57,10 +57,10 @@ class GamePacketHandler(Vanilla.GamePacketHandler):
         tp = data.get(1)
         lang = data.get(4, 'little')
         guid = data.get(8, 'little')
-        if tp != cfg.game_packets.CHAT_MSG_SYSTEM and guid == self.character['guid']:
+        if tp != cfg.codes.chat_channels.SYSTEM and guid == self.character['guid']:
             return
         data.get(4)
-        channel_name = utils.read_string(data) if tp == cfg.game_packets.CHAT_MSG_CHANNEL else None
+        channel_name = utils.read_string(data) if tp == cfg.codes.chat_channels.CHANNEL else None
         data.get(8, 'little')  # guid
         txt_len = data.get(4, 'little') - 1
         text = utils.read_string(data, txt_len)
@@ -94,4 +94,4 @@ class GamePacketHandler(Vanilla.GamePacketHandler):
         counter = data.get(4, 'little')
         uptime = (time.time_ns() - self.connect_time) // 1000000
         out_data = int.to_bytes(counter, 4, 'little') + int.to_bytes(uptime, 4, 'little')
-        self.out_queue.put_nowait(Packet(cfg.game_packets.CMSG_TIME_SYNC_RESP, out_data))
+        self.out_queue.put_nowait(Packet(cfg.codes.client_headers.TIME_SYNC_RESP, out_data))

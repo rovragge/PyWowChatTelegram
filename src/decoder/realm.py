@@ -14,27 +14,27 @@ class RealmPacketDecoder:
             self.packet_id = buff.get(1)
         if not self.size:
             match self.packet_id:
-                case cfg.realm_packets.CMD_AUTH_LOGON_CHALLENGE:
+                case cfg.codes.realm_headers.AUTH_LOGON_CHALLENGE:
                     if buff.remaining < 2:
                         self.incomplete_packet = True
                         self.remaining_data = buff.array()
                         return
                     saved_position = buff.position
                     buff.get(1)
-                    self.size = 118 if cfg.auth_results.is_success(buff.get(1)) else 2
+                    self.size = 118 if cfg.codes.realm_server_auth_results.is_success(buff.get(1)) else 2
                     self.reset_position(saved_position, buff)
-                case cfg.realm_packets.CMD_AUTH_LOGON_PROOF:
+                case cfg.codes.realm_headers.AUTH_LOGON_PROOF:
                     if buff.remaining < 1:
                         self.incomplete_packet = True
                         self.remaining_data = buff.array()
                         return
                     saved_position = buff.position
-                    if cfg.auth_results.is_success(buff.get(1)):
+                    if cfg.codes.realm_server_auth_results.is_success(buff.get(1)):
                         self.size = 25 if cfg.expansion == 'Vanilla' else 31
                     else:
                         self.size = 1 if not buff.remaining else 3
                     self.reset_position(saved_position, buff)
-                case cfg.realm_packets.CMD_REALM_LIST:
+                case cfg.codes.realm_headers.REALM_LIST:
                     if buff.remaining < 2:
                         self.incomplete_packet = True
                         self.remaining_data = buff.array()

@@ -73,19 +73,19 @@ class GamePacketHandler(TBC.GamePacketHandler):
         if lang == -1 or lang == 4294967295:  # addon messages and questionable stuff
             return
         guid = data.get(8, 'little')
-        if tp != cfg.game_packets.CHAT_MSG_SYSTEM and guid == self.character['guid']:
+        if tp != cfg.codes.chat_channels.SYSTEM and guid == self.character['guid']:
             return
         data.get(4)
         if gm:
             data.get(4)
             utils.read_string(data)
-        channel_name = utils.read_string(data) if tp == cfg.game_packets.CHAT_MSG_CHANNEL else None
+        channel_name = utils.read_string(data) if tp == cfg.codes.chat_channels.CHANNEL else None
         # TODO Check if channel is handled or is an achievement message
         data.get(8, 'little')  # guid again
         text_len = data.get(4, 'little') - 1
         text = utils.read_string(data, text_len)
         data.get(2)  # null terminator + chat tag
-        if tp == cfg.game_packets.CHAT_MSG_GUILD_ACHIEVEMENT:
+        if tp == cfg.codes.chat_channels.GUILD_ACHIEVEMENT:
             self.handle_achievement_event(guid, data.get(4, 'little'))
         else:
             msg = ChatMessage(guid, tp, text, channel_name)

@@ -13,4 +13,4 @@ class GamePacketEncoder:
 
     @staticmethod
     def is_unencrypted_packet(packet_id):
-        return packet_id == cfg.game_packets.CMSG_AUTH_CHALLENGE
+        return packet_id == cfg.codes.client_headers.AUTH_CHALLENGE

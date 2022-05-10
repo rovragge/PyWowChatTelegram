@@ -53,7 +53,7 @@ class GameConnector(Connector):
             return
         while not self.writer.is_closing():
             try:
-                await self.out_queue.put(Packet(cfg.game_packets.CMSG_PING, data))
+                await self.out_queue.put(Packet(cfg.codes.client_headers.PING, data))
                 await asyncio.sleep(delay)
             except asyncio.exceptions.CancelledError:
                 cfg.logger.error('Ping coroutine canceled')
@@ -69,7 +69,7 @@ class GameConnector(Connector):
             return
         while not self.writer.is_closing():
             try:
-                await self.out_queue.put(Packet(cfg.game_packets.CMSG_KEEP_ALIVE, b''))
+                await self.out_queue.put(Packet(cfg.codes.client_headers.KEEP_ALIVE, b''))
                 await asyncio.sleep(delay)
             except asyncio.exceptions.CancelledError:
                 cfg.logger.error('Keep alive coroutine canceled')

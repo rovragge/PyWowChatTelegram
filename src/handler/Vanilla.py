@@ -40,37 +40,37 @@ class GamePacketHandler:
     def handle_packet(self, packet):
         data = packet.to_byte_buff()
         match packet.id:
-            case cfg.game_packets.SMSG_AUTH_CHALLENGE:
+            case cfg.codes.server_headers.AUTH_CHALLENGE:
                 return self.handle_SMSG_AUTH_CHALLENGE(data)
-            case cfg.game_packets.SMSG_AUTH_RESPONSE:
+            case cfg.codes.server_headers.AUTH_RESPONSE:
                 return self.handle_SMSG_AUTH_RESPONSE(data)
-            case cfg.game_packets.SMSG_NAME_QUERY:
+            case cfg.codes.server_headers.NAME_QUERY:
                 return self.handle_SMSG_NAME_QUERY(data)
-            case cfg.game_packets.SMSG_CHAR_ENUM:
+            case cfg.codes.server_headers.CHAR_ENUM:
                 return self.handle_SMSG_CHAR_ENUM(data)
-            case cfg.game_packets.SMSG_LOGIN_VERIFY_WORLD:
+            case cfg.codes.server_headers.LOGIN_VERIFY_WORLD:
                 return self.handle_SMSG_LOGIN_VERIFY_WORLD(data)
-            case cfg.game_packets.SMSG_GUILD_QUERY:
+            case cfg.codes.server_headers.GUILD_QUERY:
                 return self.handle_SMSG_GUILD_QUERY(data)
-            case cfg.game_packets.SMSG_GUILD_EVENT:
+            case cfg.codes.server_headers.GUILD_EVENT:
                 return self.handle_SMSG_GUILD_EVENT(data)
-            case cfg.game_packets.SMSG_GUILD_ROSTER:
+            case cfg.codes.server_headers.GUILD_ROSTER:
                 return self.handle_SMSG_GUILD_ROSTER(data)
-            case cfg.game_packets.SMSG_MESSAGECHAT:
+            case cfg.codes.server_headers.MESSAGECHAT:
                 return self.handle_SMSG_MESSAGECHAT(data)
-            case cfg.game_packets.SMSG_CHANNEL_NOTIFY:
+            case cfg.codes.server_headers.CHANNEL_NOTIFY:
                 return self.handle_SMSG_CHANNEL_NOTIFY(data)
-            case cfg.game_packets.SMSG_NOTIFICATION:
+            case cfg.codes.server_headers.NOTIFICATION:
                 return self.handle_SMSG_NOTIFICATION(data)
-            case cfg.game_packets.SMSG_WHO:
+            case cfg.codes.server_headers.WHO:
                 return self.handle_SMSG_WHO(data)
-            case cfg.game_packets.SMSG_SERVER_MESSAGE:
+            case cfg.codes.server_headers.SERVER_MESSAGE:
                 return self.handle_SMSG_SERVER_MESSAGE(data)
-            case cfg.game_packets.SMSG_INVALIDATE_PLAYER:
+            case cfg.codes.server_headers.INVALIDATE_PLAYER:
                 return self.handle_SMSG_INVALIDATE_PLAYER(data)
-            case cfg.game_packets.SMSG_WARDEN_DATA:
+            case cfg.codes.server_headers.WARDEN_DATA:
                 return self.handle_SMSG_WARDEN_DATA(data)
-            case cfg.game_packets.SMSG_GROUP_INVITE:
+            case cfg.codes.server_headers.GROUP_INVITE:
                 return self.handle_SMSG_GROUP_INVITE(data)
             case _:
                 pass
@@ -79,7 +79,7 @@ class GamePacketHandler:
     def handle_SMSG_AUTH_CHALLENGE(self, data):
         challenge = self.parse_auth_challenge(data)
         cfg.crypt.initialize(cfg.realm['session_key'])
-        self.out_queue.put_nowait(Packet(cfg.game_packets.CMSG_AUTH_CHALLENGE, challenge))
+        self.out_queue.put_nowait(Packet(cfg.codes.client_headers.AUTH_CHALLENGE, challenge))
 
     def parse_auth_challenge(self, data):
         account_bytes = bytes(cfg.account, 'utf-8')
@@ -104,12 +104,12 @@ class GamePacketHandler:
 
     def handle_SMSG_AUTH_RESPONSE(self, data):
         code = data.get(1)
-        if code == cfg.game_packets.AUTH_OK:
+        if code == cfg.codes.game_auth_results.OK:
             cfg.logger.info('Successfully logged into game server')
             if not self.received_char_enum:
-                self.out_queue.put_nowait(Packet(cfg.game_packets.CMSG_CHAR_ENUM, b''))
+                self.out_queue.put_nowait(Packet(cfg.codes.client_headers.CHAR_ENUM, b''))
         else:
-            cfg.logger.error(cfg.auth_results.get_message(code))
+            cfg.logger.error(cfg.codes.realm_server_auth_results.get_str(code))
             return
 
     def handle_SMSG_CHAR_ENUM(self, data):
@@ -123,7 +123,7 @@ class GamePacketHandler:
         self.guild = Guild(self.character['guild_guid'])
         cfg.logger.info(f'Logging in with character {self.character["name"]}')
         guid = int.to_bytes(self.character['guid'], 8, 'little')
-        self.out_queue.put_nowait(Packet(cfg.game_packets.CMSG_PLAYER_LOGIN, guid))
+        self.out_queue.put_nowait(Packet(cfg.codes.client_headers.PLAYER_LOGIN, guid))
 
     def parse_char_enum(self, data):
         n_of_chars = data.get(1)
@@ -136,7 +136,7 @@ class GamePacketHandler:
             if char['name'].lower() == cfg.character:
                 correct_char = char
             char['race'] = data.get(1)
-            char['language'] = cfg.game_packets.get_language(char['race'])
+            char['language'] = cfg.codes.races.get_language(char['race'])
             char['class'] = data.get(1)
             char['gender'] = data.get(1)
             char['skin'] = data.get(1)
@@ -177,13 +177,13 @@ class GamePacketHandler:
         if self.guild:
             self.update_roster()
             guid = int.to_bytes(self.guild.guid, 4, 'little')
-            self.out_queue.put_nowait(Packet(cfg.game_packets.CMSG_GUILD_QUERY, guid))
+            self.out_queue.put_nowait(Packet(cfg.codes.client_headers.GUILD_QUERY, guid))
         return 2
 
     def update_roster(self):
         if not self.last_roster_update or time.time() - self.last_roster_update > 60:
             self.last_roster_update = time.time()
-            self.out_queue.put_nowait(Packet(cfg.game_packets.CMSG_GUILD_ROSTER, b''))
+            self.out_queue.put_nowait(Packet(cfg.codes.client_headers.GUILD_ROSTER, b''))
 
     def handle_SMSG_NAME_QUERY(self, data):
         name_query_message = self.parse_name_query(data)
@@ -221,24 +221,24 @@ class GamePacketHandler:
             return
         if not list(filter(bool, messages)):
             return
-        if event != cfg.game_packets.GE_MOTD and cfg.character.lower() == messages[0].lower():
+        if event != cfg.codes.guild_events.MOTD and cfg.character.lower() == messages[0].lower():
             return
         match event:
-            case cfg.game_packets.GE_SIGNED_ON:
+            case cfg.codes.guild_events.SIGNED_ON:
                 msg = f'{messages[0]} has come online'
-            case cfg.game_packets.GE_SIGNED_OFF:
+            case cfg.codes.guild_events.SIGNED_OFF:
                 msg = f'{messages[0]} has come offline'
-            case cfg.game_packets.GE_JOINED:
+            case cfg.codes.guild_events.JOINED:
                 msg = f'{messages[0]} has joined the guild'
-            case cfg.game_packets.GE_LEFT:
+            case cfg.codes.guild_events.LEFT:
                 msg = f'{messages[0]} has left the guild'
-            case cfg.game_packets.GE_PROMOTED:
+            case cfg.codes.guild_events.PROMOTED:
                 msg = f'{messages[0]} has promoted {messages[1]} to {messages[2]}'
-            case cfg.game_packets.GE_DEMOTED:
+            case cfg.codes.guild_events.DEMOTED:
                 msg = f'{messages[0]} has demoted {messages[1]} to {messages[2]}'
-            case cfg.game_packets.GE_REMOVED:
+            case cfg.codes.guild_events.REMOVED:
                 msg = f'{messages[1]} has kicked {messages[0]} from the guild'
-            case cfg.game_packets.GE_MOTD:
+            case cfg.codes.guild_events.MOTD:
                 msg = f'Guild Message of the Day: {messages[0]}'
 
         # TODO Send notification to discord
@@ -282,7 +282,7 @@ class GamePacketHandler:
         lang = data.get(4, 'little')
         if lang == -1:  # addon messages
             return
-        if tp == cfg.game_packets.CHAT_MSG_CHANNEL:
+        if tp == cfg.codes.chat_channels.CHANNEL:
             channel_name = utils.read_string(data)
             data.get(4)
         else:
@@ -291,10 +291,10 @@ class GamePacketHandler:
         # TODO Check if channel is handled
 
         guid = data.get(8, 'little')
-        if tp != cfg.game_packets.CHAT_MSG_SYSTEM and guid == self.character['guid']:
+        if tp != cfg.codes.chat_channels.SYSTEM and guid == self.character['guid']:
             return
         match tp:
-            case cfg.game_packets.CHAT_MSG_SAY | cfg.game_packets.CHAT_MSG_YELL:
+            case cfg.codes.chat_channels.SAY | cfg.codes.chat_channels.YELL:
                 target_guid = data.get(8, 'little')
             case _:
                 target_guid = None
@@ -307,23 +307,23 @@ class GamePacketHandler:
         tp = data.get(1)
         channel_name = utils.read_string(data)
         match tp:
-            case cfg.game_packets.CHAT_YOU_JOINED_NOTICE:
+            case cfg.codes.chat_events.YOU_JOINED_NOTICE:
                 cfg.logger.info(f'Joined WOW chat channel {channel_name}')
-            case cfg.game_packets.CHAT_WRONG_PASSWORD_NOTICE:
+            case cfg.codes.chat_events.WRONG_PASSWORD_NOTICE:
                 cfg.logger.error(f'Incorrect password for channel {channel_name}')
-            case cfg.game_packets.CHAT_MUTED_NOTICE:
+            case cfg.codes.chat_events.MUTED_NOTICE:
                 cfg.logger.error(f'You do not have permission to speak in {channel_name}')
-            case cfg.game_packets.CHAT_BANNED_NOTICE:
+            case cfg.codes.chat_events.BANNED_NOTICE:
                 cfg.logger.error(f'You are banned from channel {channel_name}')
-            case cfg.game_packets.CHAT_WRONG_FACTION_NOTICE:
+            case cfg.codes.chat_events.WRONG_FACTION_NOTICE:
                 cfg.logger.error(f'Wrong faction for channel {channel_name}')
-            case cfg.game_packets.CHAT_INVALID_NAME_NOTICE:
+            case cfg.codes.chat_events.INVALID_NAME_NOTICE:
                 cfg.logger.error(f'Invalid channel name')
-            case cfg.game_packets.CHAT_THROTTLED_NOTICE:
+            case cfg.codes.chat_events.THROTTLED_NOTICE:
                 cfg.logger.error(f'Wait to send another message to {channel_name}')
-            case cfg.game_packets.CHAT_NOT_IN_AREA_NOTICE:
+            case cfg.codes.chat_events.NOT_IN_AREA_NOTICE:
                 cfg.logger.error(f'Not in the right area for channel {channel_name}')
-            case cfg.game_packets.CHAT_NOT_IN_LFG_NOTICE:
+            case cfg.codes.chat_events.NOT_IN_LFG_NOTICE:
                 cfg.logger.error(f'Must be LFG before joining channel {channel_name}')
 
     @staticmethod
@@ -336,15 +336,15 @@ class GamePacketHandler:
     def handle_SMSG_SERVER_MESSAGE(self, data):
         tp = data.get(4, 'little')
         text = utils.read_string(data)
-        message = ChatMessage(0, cfg.game_packets.CHAT_MSG_SYSTEM, None, None)
+        message = ChatMessage(0, cfg.codes.chat_channels.SYSTEM, None, None)
         match tp:
-            case cfg.game_packets.SERVER_MSG_SHUTDOWN_TIME:
+            case cfg.codes.server_messages.SHUTDOWN_TIME:
                 message.text = f'Server shutdown in {text}'
-            case cfg.game_packets.SERVER_MSG_RESTART_TIME:
+            case cfg.codes.server_messages.RESTART_TIME:
                 message.text = f'Server restart in {text}'
-            case cfg.game_packets.SERVER_MSG_SHUTDOWN_CANCELLED:
+            case cfg.codes.server_messages.SHUTDOWN_CANCELLED:
                 message.text = f'Server shutdown cancelled'
-            case cfg.game_packets.SERVER_MSG_RESTART_CANCELLED:
+            case cfg.codes.server_messages.RESTART_CANCELLED:
                 message.text = f'Server restart cancelled'
             case _:
                 cfg.logger.error(f'Unknown type of server message: {tp} - {text}')
@@ -382,7 +382,7 @@ class GamePacketHandler:
         buff.put(0)
         buff.strip()
         buff.rewind()
-        self.out_queue.put_nowait(Packet(cfg.game_packets.CMSG_MESSAGECHAT, buff.array()))
+        self.out_queue.put_nowait(Packet(cfg.codes.client_headers.MESSAGECHAT, buff.array()))
 
     def send_notification(self, message):
-        self.send_message_to_wow(cfg.game_packets.CHAT_MSG_GUILD, message)
+        self.send_message_to_wow(cfg.codes.chat_channels.GUILD, message)

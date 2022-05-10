@@ -110,10 +110,6 @@ class _Config:
                 return 11723
             case '3.3.5':
                 return 12340
-            case '4.3.4':
-                return 15595
-            case '5.4.8':
-                return 18414
             case _:
                 self.logger.error(f'Build version {self.version} not supported')
                 raise ValueError
@@ -126,10 +122,6 @@ class _Config:
                 return 'TBC'
             case '3':
                 return 'WotLK'
-            case '4':
-                return 'Cataclysm'
-            case '5':
-                return 'MoP'
             case _:
                 self.logger.error(f'Expansion {self.version} not supported!')
                 raise ValueError

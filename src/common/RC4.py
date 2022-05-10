@@ -1,6 +1,3 @@
-import src.common.config as config
-
-
 class RC4:
     SBOX_LENGTH = 256
 

@@ -224,9 +224,9 @@ class GamePacketHandler:
         if event != cfg.game_packets.GE_MOTD and cfg.character.lower() == messages[0].lower():
             return
         match event:
-            case cfg.game_packets.SIGNED_ON:
+            case cfg.game_packets.GE_SIGNED_ON:
                 msg = f'{messages[0]} has come online'
-            case cfg.game_packets.SIGNED_OFF:
+            case cfg.game_packets.GE_SIGNED_OFF:
                 msg = f'{messages[0]} has come offline'
             case cfg.game_packets.GE_JOINED:
                 msg = f'{messages[0]} has joined the guild'
@@ -239,7 +239,7 @@ class GamePacketHandler:
             case cfg.game_packets.GE_REMOVED:
                 msg = f'{messages[1]} has kicked {messages[0]} from the guild'
             case cfg.game_packets.GE_MOTD:
-                msg = f'Guild Message of the Day: {messages[1]}'
+                msg = f'Guild Message of the Day: {messages[0]}'
 
         # TODO Send notification to discord
 

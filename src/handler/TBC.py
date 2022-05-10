@@ -4,7 +4,7 @@ from src.common.config import cfg
 from src.common.message import ChatMessage
 from src.common import utils as utils
 from src.common.packet import Packet
-from src.handler.game import Vanilla
+from src.handler import Vanilla
 
 
 class GamePacketHandler(Vanilla.GamePacketHandler):

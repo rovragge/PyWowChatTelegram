@@ -1,4 +1,4 @@
-from src.decoder.game import WotLK
+from src.decoder import WotLK
 
 
 class GamePacketDecoder(WotLK.GamePacketDecoder):

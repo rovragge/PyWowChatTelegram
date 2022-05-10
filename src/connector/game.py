@@ -11,9 +11,9 @@ class GameConnector(Connector):
 
     def __init__(self):
         super().__init__()
-        self.decoder = getattr(import_module(f'src.decoder.game.{cfg.expansion}'), 'GamePacketDecoder')()
-        self.encoder = getattr(import_module(f'src.encoder.game.{cfg.expansion}'), 'GamePacketEncoder')()
-        self.handler = getattr(import_module(f'src.handler.game.{cfg.expansion}'), 'GamePacketHandler')(self.out_queue)
+        self.decoder = getattr(import_module(f'src.decoder.{cfg.expansion}'), 'GamePacketDecoder')()
+        self.encoder = getattr(import_module(f'src.encoder.{cfg.expansion}'), 'GamePacketEncoder')()
+        self.handler = getattr(import_module(f'src.handler.{cfg.expansion}'), 'GamePacketHandler')(self.out_queue)
 
     async def run(self):
         cfg.logger.info(f'Connecting to game server: {cfg.realm["name"]}')

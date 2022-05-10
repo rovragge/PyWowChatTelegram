@@ -1,4 +1,4 @@
-from src.handler.game import WotLK
+from src.handler import WotLK
 
 
 class GamePacketHandler(WotLK.GamePacketHandler):

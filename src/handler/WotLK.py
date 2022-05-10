@@ -6,7 +6,7 @@ import PyByteBuffer
 import src.common.utils as utils
 from src.common.message import ChatMessage
 from src.common.config import cfg
-from src.handler.game import TBC
+from src.handler import TBC
 
 
 class GamePacketHandler(TBC.GamePacketHandler):

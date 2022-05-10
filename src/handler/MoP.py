@@ -1,4 +1,4 @@
-from src.handler.game import Cataclysm
+from src.handler import Cataclysm
 
 
 class GamePacketHandler(Cataclysm.GamePacketHandler):

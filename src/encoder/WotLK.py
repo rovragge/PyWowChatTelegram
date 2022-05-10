@@ -1,4 +1,4 @@
-from src.encoder.game import Vanilla
+from src.encoder import Vanilla
 
 
 class GamePacketEncoder(Vanilla.GamePacketEncoder):

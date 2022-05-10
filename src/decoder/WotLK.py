@@ -1,5 +1,5 @@
 from src.common.config import cfg
-from src.decoder.game import Vanilla
+from src.decoder import Vanilla
 
 
 class GamePacketDecoder(Vanilla.GamePacketDecoder):

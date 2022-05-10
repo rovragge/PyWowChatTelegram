@@ -1,4 +1,4 @@
-from src.encoder.game import Cataclysm
+from src.encoder import Cataclysm
 
 
 class GamePacketEncoder(Cataclysm.GamePacketEncoder):

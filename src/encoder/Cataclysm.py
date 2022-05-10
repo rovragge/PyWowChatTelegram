@@ -1,5 +1,5 @@
 from src.common.config import cfg
-from src.encoder.game import Vanilla
+from src.encoder import Vanilla
 
 
 class GamePacketEncoder(Vanilla.GamePacketEncoder):

@@ -266,7 +266,7 @@ class Codes:
     races = CharRaces
     genders = CharGenders
     game_auth_results = GameAuthResults
-    realm_server_auth_results = RealmServerAuthResults
+    logon_auth_results = RealmServerAuthResults
     client_headers = ClientHeaders
     realm_headers = RealmHeaders
     server_headers = ServerHeaders

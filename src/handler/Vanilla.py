@@ -89,8 +89,8 @@ class PacketHandler:
         byte_buff = PyByteBuffer.ByteBuffer.wrap(packet.data)
         byte_buff.get(1)  # error code
         result = byte_buff.get(1)
-        if not cfg.codes.realm_server_auth_results.is_success(result):
-            cfg.logger.error(cfg.codes.realm_server_auth_results.get_str(result))
+        if not cfg.codes.logon_auth_results.is_success(result):
+            cfg.logger.error(cfg.codes.logon_auth_results.get_str(result))
             raise ValueError
 
         B = int.from_bytes(byte_buff.array(32), 'little')
@@ -120,8 +120,8 @@ class PacketHandler:
     def handle_AUTH_LOGON_PROOF(self, packet):
         byte_buff = PyByteBuffer.ByteBuffer.wrap(packet.data)
         result = byte_buff.get(1)
-        if not cfg.codes.realm_server_auth_results.is_success(result):
-            cfg.logger.error(cfg.codes.realm_server_auth_results.get_str(result))
+        if not cfg.codes.logon_auth_results.is_success(result):
+            cfg.logger.error(cfg.codes.logon_auth_results.get_str(result))
             return
         proof = byte_buff.array(20)
         if proof != self.srp_handler.generate_hash_logon_proof():
@@ -211,7 +211,7 @@ class PacketHandler:
             if not self.received_char_enum:
                 self.out_queue.put_nowait(Packet(cfg.codes.client_headers.CHAR_ENUM, b''))
         else:
-            cfg.logger.error(cfg.codes.realm_server_auth_results.get_str(code))
+            cfg.logger.error(cfg.codes.logon_auth_results.get_str(code))
             return
 
     def handle_CHAR_ENUM(self, data):

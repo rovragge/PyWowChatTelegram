@@ -16,7 +16,7 @@ class GameConnector(Connector):
             self.reader, self.writer = await asyncio.open_connection(cfg.realm['host'], cfg.realm['port'])
         except socket.gaierror:
             cfg.logger.critical('Can\'t establish  connection')
-            exit(1)
+            return
         self.main_task = asyncio.gather(self.receiver_coroutine(), self.sender_coroutine(), self.handler_coroutine())
         try:
             await self.main_task

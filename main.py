@@ -1,15 +1,15 @@
 import asyncio
 
 from src.common.config import cfg
-from src.connector.realm import RealmConnector
+from src.connector.logon import LogonConnector
 from src.connector.game import GameConnector
 
 
 async def main():
     cfg.logger.info('Running PyWowChat')
-    realm_connector = RealmConnector()
+    logon_connector = LogonConnector()
     game_connector = GameConnector()
-    await realm_connector.run()
+    await logon_connector.run()
     await game_connector.run()
 
 

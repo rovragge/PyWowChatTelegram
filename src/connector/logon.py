@@ -8,7 +8,7 @@ from src.common.packet import Packet
 from src.connector.base import Connector
 
 
-class RealmConnector(Connector):
+class LogonConnector(Connector):
     def __init__(self):
         super().__init__()
         self.srp_handler = None
@@ -17,13 +17,13 @@ class RealmConnector(Connector):
     async def run(self):
         host, port = cfg.parse_realm_list()
         await self.out_queue.put(self.get_initial_packet())
-        cfg.logger.info(f'Connecting to realm server: {host}')
-        cfg.logger.debug(f'Connecting to realm server: {host}:{port}')
+        cfg.logger.info(f'Connecting to logon server: {host}')
+        cfg.logger.debug(f'Connecting to logon server: {host}:{port}')
         try:
             self.reader, self.writer = await asyncio.open_connection(host, port)
         except socket.gaierror:
-            cfg.logger.critical('Can\'t establish connection')
-            exit(1)
+            cfg.logger.error('Can\'t establish connection')
+            return
         self.main_task = asyncio.gather(self.receiver_coroutine(), self.sender_coroutine(), self.handler_coroutine())
         try:
             await self.main_task

@@ -13,7 +13,7 @@ class PacketDecoder:
 
     def decode(self, buff, is_game):
         if not is_game:
-            return self.decode_realm(buff)
+            return self.decode_logon(buff)
         if not self.packet_size and not self.packet_id:
             if buff.remaining < PacketDecoder.HEADER_LENGTH:
                 self.incomplete_packet = True
@@ -23,7 +23,7 @@ class PacketDecoder:
                 buff) if cfg.crypt.initialized else self.parse_header(buff)
         return self.compose_packet(buff)
 
-    def decode_realm(self, buff):
+    def decode_logon(self, buff):
         if not self.packet_id:
             self.packet_id = buff.get(1)
         if not self.packet_size:
@@ -35,7 +35,7 @@ class PacketDecoder:
                         return
                     saved_position = buff.position
                     buff.get(1)
-                    self.packet_size = 118 if cfg.codes.realm_server_auth_results.is_success(buff.get(1)) else 2
+                    self.packet_size = 118 if cfg.codes.logon_auth_results.is_success(buff.get(1)) else 2
                     self.reset_position(saved_position, buff)
                 case cfg.codes.realm_headers.AUTH_LOGON_PROOF:
                     if buff.remaining < 1:
@@ -43,7 +43,7 @@ class PacketDecoder:
                         self.remaining_data = buff.array()
                         return
                     saved_position = buff.position
-                    if cfg.codes.realm_server_auth_results.is_success(buff.get(1)):
+                    if cfg.codes.logon_auth_results.is_success(buff.get(1)):
                         self.packet_size = 25 if cfg.expansion == 'Vanilla' else 31
                     else:
                         self.packet_size = 1 if not buff.remaining else 3

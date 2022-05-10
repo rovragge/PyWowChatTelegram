@@ -6,13 +6,11 @@ import PyByteBuffer
 from src.common.config import cfg
 from src.common.packet import Packet
 from src.connector.base import Connector
-from src.handler.realm import RealmPacketHandler
 
 
 class RealmConnector(Connector):
     def __init__(self):
         super().__init__()
-        self.handler = RealmPacketHandler(self.out_queue)
         self.srp_handler = None
         self.logon_finished = False
 

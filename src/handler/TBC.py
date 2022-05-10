@@ -7,7 +7,7 @@ from src.common.packet import Packet
 from src.handler import Vanilla
 
 
-class GamePacketHandler(Vanilla.GamePacketHandler):
+class PacketHandler(Vanilla.PacketHandler):
     def __init__(self, out_queue):
         super().__init__(out_queue)
         self.connect_time = time.time_ns()
@@ -22,11 +22,11 @@ class GamePacketHandler(Vanilla.GamePacketHandler):
         data = packet.to_byte_buff()
         match packet.id:
             case cfg.codes.server_headers.GM_MESSAGECHAT:
-                return self.handle_SMSG_MESSAGECHAT(data, gm=True)
+                return self.handle_MESSAGECHAT(data, gm=True)
             case cfg.codes.server_headers.MOTD:
-                return self.handle_SMSG_MOTD(data)
+                return self.handle_MOTD(data)
             case cfg.codes.server_headers.TIME_SYNC_REQ:
-                return self.handle_SMSG_TIME_SYNC_REQ(data)
+                return self.handle_TIME_SYNC_REQ(data)
             case _:
                 return super().handle_packet(packet)
 
@@ -38,7 +38,7 @@ class GamePacketHandler(Vanilla.GamePacketHandler):
     def get_bag_display_info(data):
         return data.get(9, 'little')
 
-    def handle_SMSG_MOTD(self, data):
+    def handle_MOTD(self, data):
         if cfg.server_MOTD_enabled:
             messages = self.parse_server_MOTD(data)
             for message in messages:
@@ -90,7 +90,7 @@ class GamePacketHandler(Vanilla.GamePacketHandler):
             members[member['guid']] = member
         return members
 
-    def handle_SMSG_TIME_SYNC_REQ(self, data):
+    def handle_TIME_SYNC_REQ(self, data):
         counter = data.get(4, 'little')
         uptime = (time.time_ns() - self.connect_time) // 1000000
         out_data = int.to_bytes(counter, 4, 'little') + int.to_bytes(uptime, 4, 'little')

@@ -1,6 +1,7 @@
 import time
 import secrets
 import hashlib
+import re
 
 import PyByteBuffer
 
@@ -8,6 +9,8 @@ from src.common.config import cfg
 from src.common.packet import Packet
 from src.common.message import ChatMessage
 import src.common.utils as utils
+from src.common.SRP import SRPHandler
+from src.common.utils import read_string
 
 
 class Guild:
@@ -21,7 +24,7 @@ class Guild:
         return self.guid is not None
 
 
-class GamePacketHandler:
+class PacketHandler:
     ADDON_INFO = b'V\x01\x00\x00x\x9cu\xcc\xbd\x0e\xc20\x0c\x04\xe0\xf2\x1e\xbc\x0ca@\x95\xc8B\xc3\x8cL\xe2"\x0b\xc7' \
                  b'\xa9\x8c\xcbO\x9f\x1e\x16$\x06s\xebww\x81iY@\xcbi3g\xa3&\xc7\xbe[\xd5\xc7z\xdf}\x12\xbe\x16\xc0' \
                  b'\x8cq$\xe4\x12I\xa8\xc2\xe4\x95H\n\xc9\xc5=\xd8\xb6z\x06K\xf84\x0f\x15Fsg\xbb8\xccz\xc7\x97\x8b' \
@@ -40,43 +43,142 @@ class GamePacketHandler:
     def handle_packet(self, packet):
         data = packet.to_byte_buff()
         match packet.id:
+            case cfg.codes.realm_headers.AUTH_LOGON_CHALLENGE:
+                return self.handle_AUTH_LOGON_CHALLENGE(packet)
+            case cfg.codes.realm_headers.AUTH_LOGON_PROOF:
+                return self.handle_AUTH_LOGON_PROOF(packet)
+            case cfg.codes.realm_headers.REALM_LIST:
+                return self.handle_REALM_LIST(packet)
             case cfg.codes.server_headers.AUTH_CHALLENGE:
-                return self.handle_SMSG_AUTH_CHALLENGE(data)
+                return self.handle_AUTH_CHALLENGE(data)
             case cfg.codes.server_headers.AUTH_RESPONSE:
-                return self.handle_SMSG_AUTH_RESPONSE(data)
+                return self.handle_AUTH_RESPONSE(data)
             case cfg.codes.server_headers.NAME_QUERY:
-                return self.handle_SMSG_NAME_QUERY(data)
+                return self.handle_NAME_QUERY(data)
             case cfg.codes.server_headers.CHAR_ENUM:
-                return self.handle_SMSG_CHAR_ENUM(data)
+                return self.handle_CHAR_ENUM(data)
             case cfg.codes.server_headers.LOGIN_VERIFY_WORLD:
-                return self.handle_SMSG_LOGIN_VERIFY_WORLD(data)
+                return self.handle_LOGIN_VERIFY_WORLD(data)
             case cfg.codes.server_headers.GUILD_QUERY:
-                return self.handle_SMSG_GUILD_QUERY(data)
+                return self.handle_GUILD_QUERY(data)
             case cfg.codes.server_headers.GUILD_EVENT:
-                return self.handle_SMSG_GUILD_EVENT(data)
+                return self.handle_GUILD_EVENT(data)
             case cfg.codes.server_headers.GUILD_ROSTER:
-                return self.handle_SMSG_GUILD_ROSTER(data)
+                return self.handle_GUILD_ROSTER(data)
             case cfg.codes.server_headers.MESSAGECHAT:
-                return self.handle_SMSG_MESSAGECHAT(data)
+                return self.handle_MESSAGECHAT(data)
             case cfg.codes.server_headers.CHANNEL_NOTIFY:
-                return self.handle_SMSG_CHANNEL_NOTIFY(data)
+                return self.handle_CHANNEL_NOTIFY(data)
             case cfg.codes.server_headers.NOTIFICATION:
-                return self.handle_SMSG_NOTIFICATION(data)
+                return self.handle_NOTIFICATION(data)
             case cfg.codes.server_headers.WHO:
-                return self.handle_SMSG_WHO(data)
+                return self.handle_WHO(data)
             case cfg.codes.server_headers.SERVER_MESSAGE:
-                return self.handle_SMSG_SERVER_MESSAGE(data)
+                return self.handle_SERVER_MESSAGE(data)
             case cfg.codes.server_headers.INVALIDATE_PLAYER:
-                return self.handle_SMSG_INVALIDATE_PLAYER(data)
+                return self.handle_INVALIDATE_PLAYER(data)
             case cfg.codes.server_headers.WARDEN_DATA:
-                return self.handle_SMSG_WARDEN_DATA(data)
+                return self.handle_WARDEN_DATA(data)
             case cfg.codes.server_headers.GROUP_INVITE:
-                return self.handle_SMSG_GROUP_INVITE(data)
+                return self.handle_GROUP_INVITE(data)
             case _:
                 pass
                 # cfg.logger.error(f'No handling method for this type of packet: {hex(packet.id)}')
 
-    def handle_SMSG_AUTH_CHALLENGE(self, data):
+    def handle_AUTH_LOGON_CHALLENGE(self, packet):
+        byte_buff = PyByteBuffer.ByteBuffer.wrap(packet.data)
+        byte_buff.get(1)  # error code
+        result = byte_buff.get(1)
+        if not cfg.codes.realm_server_auth_results.is_success(result):
+            cfg.logger.error(cfg.codes.realm_server_auth_results.get_str(result))
+            raise ValueError
+
+        B = int.from_bytes(byte_buff.array(32), 'little')
+        g_length = byte_buff.get(1)
+        g = int.from_bytes(byte_buff.array(g_length), 'little')
+        n_length = byte_buff.get(1)
+        N = int.from_bytes(byte_buff.array(n_length), 'little')
+        salt = int.from_bytes(byte_buff.array(32), 'little')
+        byte_buff.array(16)
+        security_flag = byte_buff.get(1)
+
+        self.srp_handler = SRPHandler(B, g, N, salt, security_flag)
+        self.srp_handler.step1()
+
+        buff = bytearray()
+        buff += self.srp_handler.A
+        buff += self.srp_handler.M
+
+        md = hashlib.sha1(self.srp_handler.A)
+        md.update(self.srp_handler.crc_hash)
+        buff += md.digest()
+
+        buff += int.to_bytes(0, 2, 'big')
+        packet = Packet(cfg.codes.realm_headers.AUTH_LOGON_PROOF, buff)
+        self.out_queue.put_nowait(packet)
+
+    def handle_AUTH_LOGON_PROOF(self, packet):
+        byte_buff = PyByteBuffer.ByteBuffer.wrap(packet.data)
+        result = byte_buff.get(1)
+        if not cfg.codes.realm_server_auth_results.is_success(result):
+            cfg.logger.error(cfg.codes.realm_server_auth_results.get_str(result))
+            return
+        proof = byte_buff.array(20)
+        if proof != self.srp_handler.generate_hash_logon_proof():
+            cfg.logger.error(
+                'Logon proof generated by client and server differ. Something is very wrong!')
+            return
+        else:
+            byte_buff.get(4)  # account flag
+            cfg.logger.info(f'Successfully logged into realm server')
+            packet = Packet(cfg.codes.realm_headers.REALM_LIST, int.to_bytes(0, 4, 'big'))
+            self.out_queue.put_nowait(packet)
+
+    def handle_REALM_LIST(self, packet):
+        realm_name = cfg.realm_name
+        realms = self.parse_realm_list(packet)
+        target_realm = tuple(filter(lambda r: r['name'].lower() == realm_name.lower(), realms))[0]
+        if not target_realm:
+            cfg.logger.error(f'Realm {realm_name} not found!')
+            return
+        target_realm['session_key'] = int.to_bytes(self.srp_handler.K, 40, 'little')
+        cfg.realm = target_realm
+        return 1
+
+    @staticmethod
+    def parse_realm_list(packet):  # different for Vanilla/TBC+
+        not_vanilla = cfg.expansion != 'Vanilla'
+        byte_buff = PyByteBuffer.ByteBuffer.wrap(packet.data)
+        byte_buff.get(4)
+        realms = []
+        realm_count = byte_buff.get(2, endianness='little')
+        for _ in range(realm_count):
+            realm = {}
+            realm['is_pvp'] = bool(byte_buff.get(1)) if not_vanilla else None
+            realm['lock_flag'] = bool(byte_buff.get(1)) if not_vanilla else None
+            realm['flags'] = byte_buff.get(1)  # offline/recommended/for newbies
+            realm['name'] = read_string(byte_buff)
+            address = read_string(byte_buff).split(':')
+            realm['host'] = address[0]
+            realm['port'] = int(address[1])
+            realm['population'] = byte_buff.get(4)
+            realm['num_chars'] = byte_buff.get(1)
+            realm['timezone'] = byte_buff.get(1)
+            realm['id'] = byte_buff.get(1)
+            if realm['flags'] & 0x04 == 0x04:
+                realm['build_info'] = byte_buff.get(5) if not_vanilla else None
+                # exclude build info from realm name
+                realm['name'] == realm['name'] if not_vanilla else re.sub(r'\(\d+,\d+,\d+\)', '', realm['name'])
+            else:
+                realm['build_info'] = None
+            realms.append(realm)
+        string = 'Available realms:' + ''.join(
+            [f'\n\t{realm["name"]} {"PvP" if realm["is_pvp"] else "PvE"} - {realm["host"]}:{realm["port"]}'
+             for realm in realms])
+        cfg.logger.debug(string)
+        return realms
+
+    def handle_AUTH_CHALLENGE(self, data):
         challenge = self.parse_auth_challenge(data)
         cfg.crypt.initialize(cfg.realm['session_key'])
         self.out_queue.put_nowait(Packet(cfg.codes.client_headers.AUTH_CHALLENGE, challenge))
@@ -97,12 +199,12 @@ class GamePacketHandler:
         md.update(server_seed)
         md.update(cfg.realm['session_key'])
         buff.put(md.digest())
-        buff.put(GamePacketHandler.ADDON_INFO)
+        buff.put(PacketHandler.ADDON_INFO)
         buff.strip()
         buff.rewind()
         return buff.array()
 
-    def handle_SMSG_AUTH_RESPONSE(self, data):
+    def handle_AUTH_RESPONSE(self, data):
         code = data.get(1)
         if code == cfg.codes.game_auth_results.OK:
             cfg.logger.info('Successfully logged into game server')
@@ -112,7 +214,7 @@ class GamePacketHandler:
             cfg.logger.error(cfg.codes.realm_server_auth_results.get_str(code))
             return
 
-    def handle_SMSG_CHAR_ENUM(self, data):
+    def handle_CHAR_ENUM(self, data):
         if self.received_char_enum:
             return
         self.received_char_enum = True
@@ -169,7 +271,7 @@ class GamePacketHandler:
     def get_bag_display_info(data):
         return data.get(5, 'little')
 
-    def handle_SMSG_LOGIN_VERIFY_WORLD(self, data):
+    def handle_LOGIN_VERIFY_WORLD(self, data):
         if self.in_world:
             return
         self.in_world = True
@@ -185,7 +287,7 @@ class GamePacketHandler:
             self.last_roster_update = time.time()
             self.out_queue.put_nowait(Packet(cfg.codes.client_headers.GUILD_ROSTER, b''))
 
-    def handle_SMSG_NAME_QUERY(self, data):
+    def handle_NAME_QUERY(self, data):
         name_query_message = self.parse_name_query(data)
         # TODO queued  chat messages
 
@@ -199,7 +301,7 @@ class GamePacketHandler:
         msg = {'guid': guid, 'name': name, 'class': char_class}
         return msg
 
-    def handle_SMSG_GUILD_QUERY(self, data):
+    def handle_GUILD_QUERY(self, data):
         data.get(4)
         self.guild.name = utils.read_string(data)
         self.guild.ranks = []
@@ -208,7 +310,7 @@ class GamePacketHandler:
             if rank:
                 self.guild.ranks.append(rank)
 
-    def handle_SMSG_GUILD_EVENT(self, data):
+    def handle_GUILD_EVENT(self, data):
         event = data.get(1)
         n_of_strings = data.get(1)
         messages = [utils.read_string(data) for _ in range(n_of_strings)]
@@ -243,7 +345,7 @@ class GamePacketHandler:
 
         # TODO Send notification to discord
 
-    def handle_SMSG_GUILD_ROSTER(self, data):
+    def handle_GUILD_ROSTER(self, data):
         self.guild.roster = self.parse_roster(data)
         log_message = 'Guild characters:' + ''.join([f'\n\t{char["name"]}' for char in self.guild.roster.values()])
         cfg.logger.debug(log_message)
@@ -272,7 +374,7 @@ class GamePacketHandler:
             members[member['guid']] = member
         return members
 
-    def handle_SMSG_MESSAGECHAT(self, data, gm=False):
+    def handle_MESSAGECHAT(self, data, gm=False):
         message = self.parse_chat_message(data, gm)
         if message:
             self.send_chat_message(message)
@@ -303,7 +405,7 @@ class GamePacketHandler:
         return ChatMessage(guid, tp, text, channel_name)
 
     @staticmethod
-    def handle_SMSG_CHANNEL_NOTIFY(data):
+    def handle_CHANNEL_NOTIFY(data):
         tp = data.get(1)
         channel_name = utils.read_string(data)
         match tp:
@@ -327,13 +429,13 @@ class GamePacketHandler:
                 cfg.logger.error(f'Must be LFG before joining channel {channel_name}')
 
     @staticmethod
-    def handle_SMSG_NOTIFICATION(data):
+    def handle_NOTIFICATION(data):
         cfg.logger.info(f'Notification: {utils.read_string(data)}')
 
-    def handle_SMSG_WHO(self, data):
+    def handle_WHO(self, data):
         pass
 
-    def handle_SMSG_SERVER_MESSAGE(self, data):
+    def handle_SERVER_MESSAGE(self, data):
         tp = data.get(4, 'little')
         text = utils.read_string(data)
         message = ChatMessage(0, cfg.codes.chat_channels.SYSTEM, None, None)
@@ -351,17 +453,17 @@ class GamePacketHandler:
                 message.text = text
         self.send_chat_message(message)
 
-    def handle_SMSG_INVALIDATE_PLAYER(self, data):
+    def handle_INVALIDATE_PLAYER(self, data):
         guid = data.get(8, 'little')
         try:
             del self.player_roster[guid]
         except KeyError:
             cfg.logger.debug(f'Can\'t remove guid {guid} from player roster')
 
-    def handle_SMSG_WARDEN_DATA(self, data):
+    def handle_WARDEN_DATA(self, data):
         pass
 
-    def handle_SMSG_GROUP_INVITE(self, data):
+    def handle_GROUP_INVITE(self, data):
         pass
 
     def send_chat_message(self, message):

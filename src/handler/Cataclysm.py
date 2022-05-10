@@ -1,5 +1,5 @@
 from src.handler import WotLK
 
 
-class GamePacketHandler(WotLK.GamePacketHandler):
+class PacketHandler(WotLK.PacketHandler):
     pass

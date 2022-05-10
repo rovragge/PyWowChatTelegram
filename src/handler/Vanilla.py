@@ -409,23 +409,23 @@ class PacketHandler:
         tp = data.get(1)
         channel_name = utils.read_string(data)
         match tp:
-            case cfg.codes.chat_events.YOU_JOINED_NOTICE:
+            case cfg.codes.chat_events.YOU_JOINED:
                 cfg.logger.info(f'Joined WOW chat channel {channel_name}')
-            case cfg.codes.chat_events.WRONG_PASSWORD_NOTICE:
+            case cfg.codes.chat_events.WRONG_PASSWORD:
                 cfg.logger.error(f'Incorrect password for channel {channel_name}')
-            case cfg.codes.chat_events.MUTED_NOTICE:
+            case cfg.codes.chat_events.MUTED:
                 cfg.logger.error(f'You do not have permission to speak in {channel_name}')
-            case cfg.codes.chat_events.BANNED_NOTICE:
+            case cfg.codes.chat_events.BANNED:
                 cfg.logger.error(f'You are banned from channel {channel_name}')
-            case cfg.codes.chat_events.WRONG_FACTION_NOTICE:
+            case cfg.codes.chat_events.WRONG_FACTION:
                 cfg.logger.error(f'Wrong faction for channel {channel_name}')
-            case cfg.codes.chat_events.INVALID_NAME_NOTICE:
+            case cfg.codes.chat_events.INVALID_NAME:
                 cfg.logger.error(f'Invalid channel name')
-            case cfg.codes.chat_events.THROTTLED_NOTICE:
+            case cfg.codes.chat_events.THROTTLED:
                 cfg.logger.error(f'Wait to send another message to {channel_name}')
-            case cfg.codes.chat_events.NOT_IN_AREA_NOTICE:
+            case cfg.codes.chat_events.NOT_IN_AREA:
                 cfg.logger.error(f'Not in the right area for channel {channel_name}')
-            case cfg.codes.chat_events.NOT_IN_LFG_NOTICE:
+            case cfg.codes.chat_events.NOT_IN_LFG:
                 cfg.logger.error(f'Must be LFG before joining channel {channel_name}')
 
     @staticmethod

@@ -7,13 +7,11 @@ from src.common.config import cfg
 from src.common.packet import Packet
 from src.connector.base import Connector
 from src.handler.realm import RealmPacketHandler
-from src.encoder.realm import RealmPacketEncoder
 
 
 class RealmConnector(Connector):
     def __init__(self):
         super().__init__()
-        self.encoder = RealmPacketEncoder()
         self.handler = RealmPacketHandler(self.out_queue)
         self.srp_handler = None
         self.logon_finished = False

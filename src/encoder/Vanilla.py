@@ -1,8 +1,11 @@
 from src.common.config import cfg
 
 
-class GamePacketEncoder:
-    def encode(self, packet):
+class PacketEncoder:
+    def encode(self, packet, is_game):
+        if not is_game:
+            size = 2 if packet.id > 255 else 1
+            return int.to_bytes(packet.id, size, 'big') + packet.data
         unencrypted = self.is_unencrypted_packet(packet.id)
         header_size = 4 if unencrypted else 6
         btarr = bytearray()

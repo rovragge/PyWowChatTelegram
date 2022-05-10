@@ -1,5 +1,5 @@
 from src.encoder import Vanilla
 
 
-class GamePacketEncoder(Vanilla.GamePacketEncoder):
+class PacketEncoder(Vanilla.PacketEncoder):
     pass

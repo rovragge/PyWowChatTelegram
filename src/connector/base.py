@@ -16,7 +16,7 @@ class Connector:
         self.in_queue = asyncio.Queue()
         self.out_queue = asyncio.Queue()
         self.decoder = getattr(import_module(f'src.decoder.{cfg.expansion}'), 'PacketDecoder')()
-        self.encoder = None
+        self.encoder = getattr(import_module(f'src.encoder.{cfg.expansion}'), 'PacketEncoder')()
         self.handler = None
         self.logon_finished = True
 
@@ -30,7 +30,7 @@ class Connector:
         while not self.writer.is_closing():
             try:
                 packet = await self.out_queue.get()
-                self.writer.write(self.encoder.encode(packet))
+                self.writer.write(self.encoder.encode(packet, self.logon_finished))
                 await self.writer.drain()
             except asyncio.exceptions.CancelledError:
                 break

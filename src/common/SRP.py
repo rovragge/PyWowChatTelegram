@@ -1,5 +1,5 @@
 import hashlib
-import os
+import secrets
 from src.common.config import cfg
 
 
@@ -26,13 +26,8 @@ class SRPHandler:
         self.salt = salt
         self.crc_hash = self.build_crc_hashes()
 
-    @staticmethod
-    def get_random_of_length(n_bytes):
-        offset = (n_bytes * 8) - 1
-        return int.from_bytes(os.urandom(n_bytes), 'big') | (1 << offset)
-
     def step1(self):
-        self.a = self.get_random_of_length(32)
+        self.a = int.from_bytes(secrets.token_bytes(32), 'big')
         self.A = int.to_bytes(pow(self.g, self.a, self.N), 32, 'little')
 
         md = hashlib.sha1(self.A)

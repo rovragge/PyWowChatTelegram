@@ -51,7 +51,7 @@ class GameAuthResults(CodeCollection):
     PARENTAL_CONTROL = 0x21
 
 
-class RealmServerAuthResults(CodeCollection):
+class LogonAuthResults(CodeCollection):
     SUCCESS = 0x00
     FAIL_BANNED = 0x03
     FAIL_UNKNOWN_ACCOUNT = 0x04
@@ -266,7 +266,7 @@ class Codes:
     races = CharRaces
     genders = CharGenders
     game_auth_results = GameAuthResults
-    logon_auth_results = RealmServerAuthResults
+    logon_auth_results = LogonAuthResults
     client_headers = ClientHeaders
     realm_headers = RealmHeaders
     server_headers = ServerHeaders

@@ -2,9 +2,9 @@ from src.common.config import cfg
 from src.decoder import Vanilla
 
 
-class GamePacketDecoder(Vanilla.GamePacketDecoder):
+class PacketDecoder(Vanilla.PacketDecoder):
     def parse_encrypted_header(self, buff):
-        header = int.to_bytes(buff.get(GamePacketDecoder.HEADER_LENGTH), GamePacketDecoder.HEADER_LENGTH, 'big')
+        header = int.to_bytes(buff.get(PacketDecoder.HEADER_LENGTH), PacketDecoder.HEADER_LENGTH, 'big')
         decrypted = cfg.crypt.decrypt(header)
 
         if decrypted[0] & 128 == 128:

@@ -1,19 +1,13 @@
 import asyncio
 import random
 
-from importlib import import_module
 from src.common.config import cfg
 from src.common.packet import Packet
 from src.connector.base import Connector
 import socket
 
-class GameConnector(Connector):
 
-    def __init__(self):
-        super().__init__()
-        self.decoder = getattr(import_module(f'src.decoder.{cfg.expansion}'), 'GamePacketDecoder')()
-        self.encoder = getattr(import_module(f'src.encoder.{cfg.expansion}'), 'GamePacketEncoder')()
-        self.handler = getattr(import_module(f'src.handler.{cfg.expansion}'), 'GamePacketHandler')(self.out_queue)
+class GameConnector(Connector):
 
     async def run(self):
         cfg.logger.info(f'Connecting to game server: {cfg.realm["name"]}')

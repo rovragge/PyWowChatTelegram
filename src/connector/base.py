@@ -1,4 +1,5 @@
 import asyncio
+from importlib import import_module
 
 import PyByteBuffer
 
@@ -12,11 +13,12 @@ class Connector:
         self.reader = None
         self.writer = None
         self.main_task = None
-        self.decoder = None
-        self.encoder = None
-        self.handler = None
         self.in_queue = asyncio.Queue()
         self.out_queue = asyncio.Queue()
+        self.decoder = getattr(import_module(f'src.decoder.{cfg.expansion}'), 'PacketDecoder')()
+        self.encoder = None
+        self.handler = None
+        self.logon_finished = True
 
     async def run(self):
         raise NotImplementedError
@@ -45,7 +47,7 @@ class Connector:
                     data = self.decoder.remaining_data + data
                 buff = PyByteBuffer.ByteBuffer.wrap(data)  # While loop accesses same buffer each time
                 while True:
-                    packet = self.decoder.decode(buff)
+                    packet = self.decoder.decode(buff, self.logon_finished)
                     if packet:
                         cfg.logger.debug(f'PACKET RECV: {packet}')
                         await self.in_queue.put(packet)

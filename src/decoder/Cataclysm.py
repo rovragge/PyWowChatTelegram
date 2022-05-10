@@ -1,5 +1,5 @@
 from src.decoder import WotLK
 
 
-class GamePacketDecoder(WotLK.GamePacketDecoder):
+class PacketDecoder(WotLK.PacketDecoder):
     pass

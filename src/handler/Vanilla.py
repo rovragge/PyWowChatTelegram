@@ -280,6 +280,36 @@ class PacketHandler:
             if rank:
                 self.guild.ranks.append(rank)
 
+    def handle_NAME_QUERY(self, data):
+        char = self.parse_name_query(data)
+        self.players[char.guid] = char
+        cfg.logger.info(f'Updated info about player {char.name}')
+        messages = self.messages_awaiting_name_query.get(char.guid)
+        if not messages:
+            return
+        for message in messages:
+            message.author = char
+            cfg.logger.info(message)
+            # send messages to discord
+        del self.messages_awaiting_name_query[char.guid]
+
+    def parse_name_query(self, data):
+        char = Character()
+        char.guid = data.get(8, 'little')
+        char.name = utils.read_string(data)
+        char.cross_name = utils.read_string(data)
+        char.race = data.get(4, 'little')
+        char.gender = data.get(4, 'little')
+        char.char_class = int.to_bytes(data.get(4, 'little'), 4, 'little')
+        return char
+
+    def send_NAME_QUERY(self, guid):
+        data = PyByteBuffer.ByteBuffer.allocate(8)
+        data.put(guid, 8, endianness='little')
+        data.rewind()
+        self.out_queue.put_nowait(Packet(cfg.codes.client_headers.NAME_QUERY, data.array()))
+
+    # ---------- Guild Events ----------
     def handle_GUILD_EVENT(self, data):
         event = data.get(1)
         n_of_strings = data.get(1)

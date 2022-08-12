@@ -43,14 +43,14 @@ class GameConnector(Connector):
         try:
             await asyncio.sleep(initial_delay)
         except asyncio.exceptions.CancelledError:
-            cfg.logger.error('Ping coroutine canceled before first packet was sent')
+            cfg.logger.debug('Ping coroutine canceled before first packet was sent')
             return
         while not self.writer.is_closing():
             try:
                 await self.out_queue.put(Packet(cfg.codes.client_headers.PING, data))
                 await asyncio.sleep(delay)
             except asyncio.exceptions.CancelledError:
-                cfg.logger.error('Ping coroutine canceled')
+                cfg.logger.debug('Ping coroutine canceled')
                 break
             ping_id += 1
 
@@ -66,7 +66,7 @@ class GameConnector(Connector):
                 await self.out_queue.put(Packet(cfg.codes.client_headers.KEEP_ALIVE, b''))
                 await asyncio.sleep(delay)
             except asyncio.exceptions.CancelledError:
-                cfg.logger.error('Keep alive coroutine canceled')
+                cfg.logger.debug('Keep alive coroutine canceled')
                 break
 
     async def roster_update_coroutine(self, initial_delay, delay):
@@ -74,12 +74,12 @@ class GameConnector(Connector):
         try:
             await asyncio.sleep(initial_delay)
         except asyncio.exceptions.CancelledError:
-            cfg.logger.error('Roster update coroutine canceled before first packet was sent')
+            cfg.logger.debug('Roster update coroutine canceled before first packet was sent')
             return
         while not self.writer.is_closing():
             try:
                 self.handler.update_roster()
                 await asyncio.sleep(delay)
             except asyncio.exceptions.CancelledError:
-                cfg.logger.error('Roster update coroutine canceled')
+                cfg.logger.debug('Roster update coroutine canceled')
                 break

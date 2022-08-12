@@ -241,6 +241,7 @@ class PacketHandler:
                 Packet(cfg.codes.client_headers.GUILD_QUERY, int.to_bytes(self.character.guild_guid, 4, 'little')))
         return 2
 
+    # ---------- Guild Stuff ----------
     def update_roster(self):
         if not self.last_roster_update or time.time() - self.last_roster_update > 60:
             self.last_roster_update = time.time()
@@ -377,19 +378,8 @@ class PacketHandler:
                 message.author = author
                 cfg.logger.info(message)
 
-        # TODO Check if channel is handled
-
-        guid = data.get(8, 'little')
-        if tp != cfg.codes.chat_channels.SYSTEM and guid == self.character['guid']:
-            return
-        match tp:
-            case cfg.codes.chat_channels.SAY | cfg.codes.chat_channels.YELL:
-                target_guid = data.get(8, 'little')
-            case _:
-                target_guid = None
-        text_len = data.get(4, 'little') - 1
-        text = utils.read_string(data, text_len)
-        return ChatMessage(guid, tp, text, channel_name)
+    def parse_chat_message(self, data, gm):
+        raise NotImplementedError
 
     @staticmethod
     def handle_CHANNEL_NOTIFY(data):

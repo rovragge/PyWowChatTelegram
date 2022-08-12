@@ -456,3 +456,35 @@ class PacketHandler:
 
     def send_notification(self, message):
         self.send_message_to_wow(cfg.codes.chat_channels.GUILD, message)
+
+    # ---------- Group ----------
+    def handle_GROUP_INVITE(self, data):
+        flag = data.get(1)
+        name = utils.read_string(data)
+        valid_names = ('Ovid', 'Hermes')
+        if name in valid_names:
+            cfg.logger.info(f'Received group invite from {name}. Accepting')
+            self.out_queue.put_nowait(Packet(cfg.codes.client_headers.GROUP_ACCEPT, bytearray(4)))
+        else:
+            cfg.logger.info(f'Received group invite from {name}. Declining')
+            self.out_queue.put_nowait(Packet(cfg.codes.client_headers.GROUP_DECLINE, b''))
+
+    def handle_GROUP_SET_LEADER(self, data):
+        new_leader = utils.read_string(data)
+        cfg.logger.info(f'{new_leader} is the new leader')
+        if new_leader == self.character.name:
+            self.out_queue.put_nowait(Packet(cfg.codes.client_headers.GROUP_RAID_CONVERT, b''))
+            self.out_queue.put_nowait(Packet(cfg.codes.client_headers.GROUP_DISBAND, b''))
+
+    def send_GROUP_SET_LEADER(self):
+        pass
+
+    def handle_GROUP_DESTROYED(self, data):
+        cfg.logger.info('Party has been disbanded!')
+
+    def handle_PARTY_COMMAND_RESULT(self, data):
+        operation = data.get(4, 'little')
+        target = utils.read_string(data)
+        result = data.get(4, 'little')
+        lfg_related = data.get(4)
+        cfg.logger.info(f'Party operation {operation}{(" on member " + target) if target else ""} resulted in {result}')

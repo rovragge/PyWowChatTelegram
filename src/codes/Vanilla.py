@@ -218,10 +218,17 @@ class ClientHeaders(CodeCollection):
     MESSAGECHAT = 0x95
     JOIN_CHANNEL = 0x97
     PING = 0x01DC
-    GROUP_INVITE = 0x06E
     TIME_SYNC_RESP = 0x039
     WARDEN_DATA = 0x02E7
     WHO = 0x62
+
+    GROUP_INVITE = 0x06E
+    GROUP_ACCEPT = 0x072
+    GROUP_DECLINE = 0x073
+    GROUP_DISBAND = 0x07B
+    GROUP_RAID_CONVERT = 0x28E
+
+    CHANGEPLAYER_DIFFICULTY = 0x1FD
 
 
 class ServerHeaders(CodeCollection):
@@ -232,7 +239,6 @@ class ServerHeaders(CodeCollection):
     NAME_QUERY = 0x51
     GUILD_QUERY = 0x55
     INVALIDATE_PLAYER = 0x031C
-    GROUP_INVITE = 0x06F
     LOGIN_VERIFY_WORLD = 0x0236
     TIME_SYNC_REQ = 0x0390
     SERVER_MESSAGE = 0x0291

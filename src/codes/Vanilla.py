@@ -1,6 +1,3 @@
-import src.common.config as config
-
-
 class CodeCollection:
 
     @classmethod
@@ -10,7 +7,6 @@ class CodeCollection:
                 string = attr_name
                 break
         else:
-            config.cfg.logger.error(f'Cant find string for code {code} in class {cls.__name__}')
             return 'Unknown'
         string = string.lower().replace('_', ' ')
         string = string[0].upper() + string[1:]
@@ -20,8 +16,7 @@ class CodeCollection:
     def get_from_str(cls, string):
         attr_name = string.upper().replace(' ', '_')
         attr = getattr(cls, attr_name)
-        if not attr:
-            config.cfg.logger.error(f'No record with name {string} for class {cls.__name__}')
+        if attr is None:
             return -1
         return attr
 

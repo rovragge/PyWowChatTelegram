@@ -61,7 +61,8 @@ class PacketDecoder:
             self.incomplete_packet = True
             self.remaining_data = buff.array()
             return
-        packet = Packet(*self.decompress(self.packet_id, buff.array(self.packet_size)))
+        packet = Packet(
+            *self.decompress(self.packet_id, buff.array(self.packet_size) if self.packet_size else bytearray(1)))
         self.incomplete_packet = bool(buff.remaining)
         self.remaining_data = None
         self.packet_size = None

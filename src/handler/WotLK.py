@@ -102,5 +102,14 @@ class PacketHandler(TBC.PacketHandler):
             return
         # TODO send discord notification (player.name, achievement_id)
 
-    def unpack_guid(self, data):
-        raise NotImplementedError
+    @staticmethod
+    def unpack_guid(data):
+        y = data.get(1)
+        result = 0
+        for x in range(8):
+            on_bit = 1 << x
+            if (y & on_bit) == on_bit:
+                result = result | ((data.get(1) & 0xFF) << (x * 8))
+            else:
+                result = result
+        return result

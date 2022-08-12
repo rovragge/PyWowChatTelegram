@@ -358,19 +358,24 @@ class PacketHandler:
 
     def handle_MESSAGECHAT(self, data, gm=False):
         message = self.parse_chat_message(data, gm)
-        if message:
-            self.send_chat_message(message)
-
-    def parse_chat_message(self, data, gm):
-        tp = data.get(1)
-        lang = data.get(4, 'little')
-        if lang == -1:  # addon messages
+        if not message:
             return
-        if tp == cfg.codes.chat_channels.CHANNEL:
-            channel_name = utils.read_string(data)
-            data.get(4)
-        else:
-            channel_name = None
+        if cfg.maps.get(message.channel):
+            if message.channel == cfg.codes.chat_channels.SYSTEM:
+                # send message straight away
+                cfg.logger.info(message)
+                return
+            author = self.players.get(message.guid)
+            if not author:
+                if author in self.messages_awaiting_name_query:
+                    self.messages_awaiting_name_query[message.guid].append(message)
+                else:
+                    self.messages_awaiting_name_query[message.guid] = [message]
+                    self.send_NAME_QUERY(message.guid)
+            else:
+                # send message straight away
+                message.author = author
+                cfg.logger.info(message)
 
         # TODO Check if channel is handled
 

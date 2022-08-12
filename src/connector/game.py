@@ -37,8 +37,8 @@ class GameConnector(Connector):
 
     async def ping_coroutine(self, initial_delay, delay):
         cfg.logger.debug('Ping coroutine alive')
-        ping_id = 0
-        latency = random.randint(0, 50) + 90
+        ping_id = 1
+        latency = random.randint(0, 50) + 50
         data = int.to_bytes(ping_id, 4, 'little') + int.to_bytes(latency, 4, 'little')
         try:
             await asyncio.sleep(initial_delay)
@@ -48,6 +48,7 @@ class GameConnector(Connector):
         while not self.writer.is_closing():
             try:
                 await self.out_queue.put(Packet(cfg.codes.client_headers.PING, data))
+                cfg.logger.debug(f'Sending ping message #{ping_id}')
                 await asyncio.sleep(delay)
             except asyncio.exceptions.CancelledError:
                 cfg.logger.debug('Ping coroutine canceled')

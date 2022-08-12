@@ -181,6 +181,9 @@ class PacketHandler:
             cfg.logger.error(cfg.codes.logon_auth_results.get_str(code))
             return
 
+    def handle_WARDEN_DATA(self, data):
+        cfg.logger.debug('Handling Warden data')
+
     def handle_CHAR_ENUM(self, data):
         if self.received_char_enum:
             return
@@ -399,9 +402,6 @@ class PacketHandler:
     def handle_NOTIFICATION(data):
         cfg.logger.info(f'Notification: {utils.read_string(data)}')
 
-    def handle_WHO(self, data):
-        pass
-
     def handle_SERVER_MESSAGE(self, data):
         tp = data.get(4, 'little')
         text = utils.read_string(data)
@@ -425,22 +425,9 @@ class PacketHandler:
         try:
             del self.player_roster[guid]
         except KeyError:
-            cfg.logger.debug(f'Can\'t remove guid {guid} from player roster')
+            cfg.logger.debug(f'Can\'t remove info about player guid {guid} - no such guid recorded')
 
-    def handle_WARDEN_DATA(self, data):
-        pass
-
-    def handle_GROUP_INVITE(self, data):
-        pass
-
-    def send_chat_message(self, message):
-        pass
-
-    def update_members_online(self):
-        # TODO Update Discord status
-        pass
-
-    def send_message_to_wow(self, tp, message, target=None):
+    def send_message_to_wow(self, msg, target=None):
         buff = PyByteBuffer.ByteBuffer.allocate(8192)
         buff.put(tp)
         buff.put(self.character['language'])

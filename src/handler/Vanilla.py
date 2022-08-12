@@ -6,22 +6,11 @@ import re
 import PyByteBuffer
 
 from src.common.config import cfg
-from src.common.packet import Packet
-from src.common.message import ChatMessage
+
 import src.common.utils as utils
 from src.common.SRP import SRPHandler
 from src.common.utils import read_string
-
-
-class Guild:
-    def __init__(self, guid):
-        self.guid = guid
-        self.name = ''
-        self.ranks = []
-        self.roster = {}
-
-    def __bool__(self):
-        return self.guid is not None
+from src.common.dataclasses import Packet, ChatMessage, Guild, Character
 
 
 class PacketHandler:
@@ -191,43 +180,44 @@ class PacketHandler:
         self.character = self.parse_char_enum(data)
         if not self.character:
             cfg.logger.error(f'Character {cfg.character} not found')
-            return
-        self.guild = Guild(self.character['guild_guid'])
-        cfg.logger.info(f'Logging in with character {self.character["name"]}')
-        guid = int.to_bytes(self.character['guid'], 8, 'little')
-        self.out_queue.put_nowait(Packet(cfg.codes.client_headers.PLAYER_LOGIN, guid))
+            raise ValueError
+        cfg.logger.info(f'Logging in with character {self.character.name}')
+        self.out_queue.put_nowait(
+            Packet(cfg.codes.client_headers.PLAYER_LOGIN, int.to_bytes(self.character.guid, 8, 'little')))
 
     def parse_char_enum(self, data):
         n_of_chars = data.get(1)
         chars = []
         correct_char = None
         for _ in range(n_of_chars):
-            char = {}
-            char['guid'] = data.get(8, 'little')
-            char['name'] = utils.read_string(data)
-            if char['name'].lower() == cfg.character:
+            char = Character()
+            char.guid = data.get(8, 'little')
+            char.name = utils.read_string(data)
+            if char.name.lower() == cfg.character:
                 correct_char = char
-            char['race'] = data.get(1)
-            char['language'] = cfg.codes.races.get_language(char['race'])
-            char['class'] = data.get(1)
-            char['gender'] = data.get(1)
-            char['skin'] = data.get(1)
-            char['face'] = data.get(1)
-            char['hair_style'] = data.get(1)
-            char['hair_color'] = data.get(1)
-            char['facial hair'] = data.get(1)
-            char['level'] = data.get(1)
-            char['zone'] = data.get(4, 'little')
-            char['map'] = data.get(4, 'little')
-            char['x'] = data.get(4, 'little')
-            char['y'] = data.get(4, 'little')
-            char['z'] = data.get(4, 'little')
-            char['guild_guid'] = data.get(4, 'little')
-            char['flags'] = data.get(4, 'little')
-            char['first_login'] = data.get(1)
-            char['pet_info'] = data.get(12, 'little')
-            char['equip_info'] = self.get_equip_info(data)
-            char['bag_display_info'] = self.get_bag_display_info(data)
+            char.race = data.get(1)
+            char.language = cfg.codes.races.get_language(char.race)
+            char.char_class = data.get(1)
+            char.gender = data.get(1)
+            char.appearance.skin = data.get(1)
+            char.appearance.face = data.get(1)
+            char.appearance.hair_style = data.get(1)
+            char.appearance.hair_color = data.get(1)
+            char.appearance.facial_hair = data.get(1)
+            char.level = data.get(1)
+            char.position.zone = data.get(4, 'little')
+            char.position.map = data.get(4, 'little')
+            char.position.x = data.get(4, 'little')
+            char.position.y = data.get(4, 'little')
+            char.position.z = data.get(4, 'little')
+            char.guild_guid = data.get(4, 'little')
+            char.flags = data.get(4, 'little')
+            if cfg.expansion == 'WotLK':
+                data.get(4)  # character customize flags
+            data.get(1)  # first login
+            char.pet_info = data.get(12, 'little')
+            char.equip_info = self.get_equip_info(data)
+            char.bag_display_info = self.get_bag_display_info(data)
             chars.append(char)
         log_message = 'Available characters:' + ''.join([f'\n\t{char["name"]}' for char in chars])
         cfg.logger.debug(log_message)
@@ -246,10 +236,9 @@ class PacketHandler:
             return
         self.in_world = True
         cfg.logger.info('Successfully joined the world')
-        if self.guild:
-            self.update_roster()
-            guid = int.to_bytes(self.guild.guid, 4, 'little')
-            self.out_queue.put_nowait(Packet(cfg.codes.client_headers.GUILD_QUERY, guid))
+        if self.character.guild_guid:
+            self.out_queue.put_nowait(
+                Packet(cfg.codes.client_headers.GUILD_QUERY, int.to_bytes(self.character.guild_guid, 4, 'little')))
         return 2
 
     def update_roster(self):
@@ -261,15 +250,28 @@ class PacketHandler:
         name_query_message = self.parse_name_query(data)
         # TODO queued  chat messages
 
-    def parse_name_query(self, data):
-        guid = data.get(8, 'little')
-        name = utils.read_string(data)
-        cross_name = utils.read_string(data)
-        race = data.get(4, 'little')
-        gender = data.get(4, 'little')
-        char_class = int.to_bytes(data.get(4, 'little'), 4, 'little')
-        msg = {'guid': guid, 'name': name, 'class': char_class}
-        return msg
+    def parse_roster(self, data):
+        roster = {}
+        n_of_chars = data.get(4, 'little')
+        self.guild.motd = utils.read_string(data)
+        self.guild.info = utils.read_string(data)
+        n_of_ranks = data.get(4, 'little')
+        for _ in range(n_of_ranks):
+            data.get(4)
+        for _ in range(n_of_chars):
+            char = Character()
+            char.guid = data.get(8, 'little')
+            is_online = bool(data.get(1))
+            char.name = utils.read_string(data)
+            char.guild_rank = data.get(4, 'little')
+            char.level = data.get(1)
+            char.char_class = data.get(1)
+            char.zone = data.get(4, 'little')
+            char.last_logoff = 0 if is_online else data.get(4, 'little')
+            utils.read_string(data)
+            utils.read_string(data)
+            roster[char.guid] = char
+        return roster
 
     def handle_GUILD_QUERY(self, data):
         data.get(4)
@@ -443,36 +445,38 @@ class PacketHandler:
     def handle_SERVER_MESSAGE(self, data):
         tp = data.get(4, 'little')
         text = utils.read_string(data)
-        message = ChatMessage(0, cfg.codes.chat_channels.SYSTEM, None, None)
+        msg = ChatMessage()
+        msg.channel = cfg.codes.chat_channels.SYSTEM
         match tp:
             case cfg.codes.server_messages.SHUTDOWN_TIME:
-                message.text = f'Server shutdown in {text}'
+                msg.text = f'Server shutdown in {text}'
             case cfg.codes.server_messages.RESTART_TIME:
-                message.text = f'Server restart in {text}'
+                msg.text = f'Server restart in {text}'
             case cfg.codes.server_messages.SHUTDOWN_CANCELLED:
-                message.text = f'Server shutdown cancelled'
+                msg.text = f'Server shutdown cancelled'
             case cfg.codes.server_messages.RESTART_CANCELLED:
-                message.text = f'Server restart cancelled'
+                msg.text = f'Server restart cancelled'
             case _:
                 cfg.logger.error(f'Unknown type of server message: {tp} - {text}')
-                message.text = text
-        self.send_chat_message(message)
+                msg.text = text
+        cfg.logger.info(msg)
 
     def handle_INVALIDATE_PLAYER(self, data):
         guid = data.get(8, 'little')
         try:
-            del self.player_roster[guid]
+            cfg.logger.info(f'Info about player {self.players[guid].name} removed')
+            del self.players[guid]
         except KeyError:
             cfg.logger.debug(f'Can\'t remove info about player guid {guid} - no such guid recorded')
 
     def send_message_to_wow(self, msg, target=None):
         buff = PyByteBuffer.ByteBuffer.allocate(8192)
-        buff.put(tp)
-        buff.put(self.character['language'])
+        buff.put(msg.channel, 4, 'little')
+        buff.put(self.character['language'], 4, 'little')
         if target:
             buff.put(bytes(target, 'utf-8'))
             buff.put(0)
-        buff.put(bytes(message, 'utf-8'))
+        buff.put(bytes(msg.text, 'utf-8'))
         buff.put(0)
         buff.strip()
         buff.rewind()

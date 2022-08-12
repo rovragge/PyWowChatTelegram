@@ -1,10 +1,9 @@
 import time
 
-from src.common.config import cfg
-from src.common.message import ChatMessage
 from src.common import utils as utils
-from src.common.packet import Packet
+from src.common.config import cfg
 from src.handler import Vanilla
+from src.common.dataclasses import Packet, ChatMessage, Character
 
 
 class PacketHandler(Vanilla.PacketHandler):
@@ -26,57 +25,63 @@ class PacketHandler(Vanilla.PacketHandler):
     def get_bag_display_info(data):
         return data.get(9, 'little')
 
+    def parse_chat_message(self, data, gm):
+        msg = ChatMessage()
+        msg.channel = data.get(1)
+        msg.language = data.get(4, 'little')
+        if msg.language in (-1, 4294967295):  # addon messages and questionable stuff
+            return
+        msg.guid = data.get(8, 'little')
+        if msg.channel != cfg.codes.chat_channels.SYSTEM and msg.guid == self.character.guid:
+            return
+        data.get(4)
+        msg.channel_name = utils.read_string(data) if msg.channel == cfg.codes.chat_channels.CHANNEL else None
+        data.get(8, 'little')  # guid
+        txt_len = data.get(4, 'little') - 1
+        msg.text = utils.read_string(data, txt_len)
+        return msg
+
+    def parse_roster(self, data):
+        n_of_chars = data.get(4, 'little')
+        roster = {}
+        self.guild.motd = utils.read_string(data)
+        self.guild.info = utils.read_string(data)
+        n_of_ranks = data.get(4, 'little')
+        for _ in range(n_of_ranks):
+            rank_info = data.get(8 + 48, 'little')  # TODO split into rank info and guild bank info
+        for _ in range(n_of_chars):
+            char = Character()
+            char.guid = data.get(8, 'little')
+            is_online = bool(data.get(1))
+            char.name = utils.read_string(data)
+            char.rank = data.get(4, 'little')
+            char.level = data.get(1)
+            char.char_class = data.get(1)
+            data.get(1)  # unknown
+            char.position.zone = data.get(4, 'little')
+            char.last_logoff = 0 if is_online else data.get(4, 'little')
+            utils.read_string(data)
+            utils.read_string(data)
+            roster[char.guid] = char
+        return roster
+
     def handle_MOTD(self, data):
         if cfg.server_MOTD_enabled:
             messages = self.parse_server_MOTD(data)
             for message in messages:
-                self.send_chat_message(message)
+                pass
 
     @staticmethod
     def parse_server_MOTD(data):
         n_of_messages = data.get(4, 'little')
         messages = []
         for _ in range(n_of_messages):
-            message = ChatMessage(0, cfg.codes.chat_channels.SYSTEM, utils.read_string(data), None)
-            messages.append(message)
+            msg = ChatMessage()
+            msg.guid = 0
+            msg.channel = cfg.codes.chat_channels.SYSTEM
+            msg.text = utils.read_string(data)
+            messages.append(msg)
         return messages
-
-    def parse_chat_message(self, data, gm):
-        tp = data.get(1)
-        lang = data.get(4, 'little')
-        guid = data.get(8, 'little')
-        if tp != cfg.codes.chat_channels.SYSTEM and guid == self.character['guid']:
-            return
-        data.get(4)
-        channel_name = utils.read_string(data) if tp == cfg.codes.chat_channels.CHANNEL else None
-        data.get(8, 'little')  # guid
-        txt_len = data.get(4, 'little') - 1
-        text = utils.read_string(data, txt_len)
-        return ChatMessage(guid, tp, text, channel_name)
-
-    def parse_roster(self, data):
-        n_of_chars = data.get(4, 'little')
-        members = {}
-        guild_motd = utils.read_string(data)
-        guild_info = utils.read_string(data)
-        n_of_ranks = data.get(4, 'little')
-        for _ in range(n_of_ranks):
-            rank_info = data.get(8 + 48, 'little')  # TODO split into rank info and guild bank info
-        for _ in range(n_of_chars):
-            member = {}
-            member['guid'] = data.get(8, 'little')
-            member['is_online'] = bool(data.get(1))
-            member['name'] = utils.read_string(data)
-            member['rank'] = data.get(4, 'little')
-            member['level'] = data.get(1)
-            member['class'] = data.get(1)
-            data.get(1)  # unknown
-            member['zone_id'] = data.get(4, 'little')
-            member['last_logoff'] = 0 if member['is_online'] else data.get(4, 'little')
-            utils.read_string(data)
-            utils.read_string(data)
-            members[member['guid']] = member
-        return members
 
     def handle_TIME_SYNC_REQ(self, data):
         counter = data.get(4, 'little')

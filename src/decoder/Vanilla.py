@@ -1,5 +1,5 @@
 from src.common.config import cfg
-from src.common.packet import Packet
+from src.common.dataclasses import Packet
 
 
 class PacketDecoder:

@@ -2,7 +2,7 @@ import asyncio
 import random
 
 from src.common.config import cfg
-from src.common.packet import Packet
+from src.common.dataclasses import Packet
 from src.connector.base import Connector
 import socket
 

@@ -4,8 +4,8 @@ import socket
 import PyByteBuffer
 
 from src.common.config import cfg
-from src.common.packet import Packet
 from src.connector.base import Connector
+from src.common.dataclasses import Packet
 
 
 class LogonConnector(Connector):

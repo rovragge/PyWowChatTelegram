@@ -4,9 +4,10 @@ import hashlib
 import PyByteBuffer
 
 import src.common.utils as utils
-from src.common.message import ChatMessage
+
 from src.common.config import cfg
 from src.handler import TBC
+from src.common.dataclasses import ChatMessage, Character
 
 
 class PacketHandler(TBC.PacketHandler):
@@ -53,37 +54,37 @@ class PacketHandler(TBC.PacketHandler):
 
     def parse_name_query(self, data):
         guid = self.unpack_guid(data)
-        name_known = data.get(1)
-        if not name_known:
-            name = utils.read_string(data)
-            cross_name = utils.read_string(data)
-            race = data.get(1)
-            gender = data.get(1)
-            char_class = data.get(1)
-        else:
-            cfg.logger.error(f'Name not known for player guid {guid}')
-            name = 'UNKNOWN'
-            char_class = b'\xff'
-        msg = {'guid': guid, 'name': name, 'class': char_class}
-        return msg
+        name_unknown = data.get(1)
+        char = Character()
+        if name_unknown:
+            cfg.logger.error(f'Name not known for guid {guid}')
+            return char
+        char.guid = guid
+        char.name = utils.read_string(data)
+        char.cross_name = utils.read_string(data)
+        char.race = data.get(1)
+        char.gender = data.get(1)
+        char.char_class = data.get(1)
+        return char
 
     def parse_chat_message(self, data, gm):
-        tp = data.get(1)
-        lang = data.get(4, 'little')
-        if lang == -1 or lang == 4294967295:  # addon messages and questionable stuff
+        msg = ChatMessage()
+        msg.channel = data.get(1)
+        msg.language = data.get(4, 'little')
+        if msg.language == -1 or msg.language == 4294967295:  # addon messages and questionable stuff
             return
-        guid = data.get(8, 'little')
-        if tp != cfg.codes.chat_channels.SYSTEM and guid == self.character['guid']:
+        msg.guid = data.get(8, 'little')
+        if msg.channel != cfg.codes.chat_channels.SYSTEM and msg.guid == self.character.guid:
             return
         data.get(4)
         if gm:
             data.get(4)
             utils.read_string(data)
-        channel_name = utils.read_string(data) if tp == cfg.codes.chat_channels.CHANNEL else None
+        msg.channel_name = utils.read_string(data) if msg.channel == cfg.codes.chat_channels.CHANNEL else None
         # TODO Check if channel is handled or is an achievement message
-        data.get(8, 'little')  # guid again
+        data.get(8, 'little')  # guid
         text_len = data.get(4, 'little') - 1
-        text = utils.read_string(data, text_len)
+        msg.text = utils.read_string(data, text_len)
         data.get(2)  # null terminator + chat tag
         if tp == cfg.codes.chat_channels.GUILD_ACHIEVEMENT:
             self.handle_achievement_event(guid, data.get(4, 'little'))

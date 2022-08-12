@@ -33,7 +33,7 @@ class PacketHandler:
     def handle_packet(self, packet):
         header = cfg.codes.server_headers.get_str(packet.id)
         if header == 'Unknown':
-            cfg.logger.debug(f'UNHANDLED PACKET: {hex(packet.id)}')
+            cfg.logger.debug(f'UNHANDLED PACKET: 0x{packet.id:03x}')
         else:
             try:
                 handler = getattr(self, f'handle_{header}')

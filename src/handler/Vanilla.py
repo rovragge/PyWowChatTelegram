@@ -246,9 +246,8 @@ class PacketHandler:
             self.last_roster_update = time.time()
             self.out_queue.put_nowait(Packet(cfg.codes.client_headers.GUILD_ROSTER, b''))
 
-    def handle_NAME_QUERY(self, data):
-        name_query_message = self.parse_name_query(data)
-        # TODO queued  chat messages
+    def handle_GUILD_ROSTER(self, data):
+        self.guild.roster = self.parse_roster(data)
 
     def parse_roster(self, data):
         roster = {}
@@ -355,34 +354,7 @@ class PacketHandler:
         cfg.logger.info(f'GUILD EVENT {msg}')
         # TODO Send notification to discord
 
-    def handle_GUILD_ROSTER(self, data):
-        self.guild.roster = self.parse_roster(data)
-        log_message = 'Guild characters:' + ''.join([f'\n\t{char["name"]}' for char in self.guild.roster.values()])
-        cfg.logger.debug(log_message)
-        self.update_members_online()
-
-    def parse_roster(self, data):
-        members = {}
-        n_of_chars = data.get(4, 'little')
-        motd = utils.read_string(data)
-        guild_info = utils.read_string(data)
-        n_of_ranks = data.get(4, 'little')
-        for _ in range(n_of_ranks):
-            data.get(4)
-        for _ in range(n_of_chars):
-            member = {}
-            member['guid'] = data.get(8, 'little')
-            member['is_online'] = bool(data.get(1))
-            member['name'] = utils.read_string(data)
-            member['rank'] = data.get(4, 'little')
-            member['level'] = data.get(1)
-            member['class'] = data.get(1)
-            member['zone_id'] = data.get(4, 'little')
-            member['last_logoff'] = data.get(4, 'little') if not member['is_online'] else 0
-            utils.read_string(data)
-            utils.read_string(data)
-            members[member['guid']] = member
-        return members
+    # ---------- Chat Stuff ----------
 
     def handle_MESSAGECHAT(self, data, gm=False):
         message = self.parse_chat_message(data, gm)

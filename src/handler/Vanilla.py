@@ -41,49 +41,17 @@ class PacketHandler:
         self.guild = None
 
     def handle_packet(self, packet):
-        data = packet.to_byte_buff()
-        match packet.id:
-            case cfg.codes.realm_headers.AUTH_LOGON_CHALLENGE:
-                return self.handle_AUTH_LOGON_CHALLENGE(packet)
-            case cfg.codes.realm_headers.AUTH_LOGON_PROOF:
-                return self.handle_AUTH_LOGON_PROOF(packet)
-            case cfg.codes.realm_headers.REALM_LIST:
-                return self.handle_REALM_LIST(packet)
-            case cfg.codes.server_headers.AUTH_CHALLENGE:
-                return self.handle_AUTH_CHALLENGE(data)
-            case cfg.codes.server_headers.AUTH_RESPONSE:
-                return self.handle_AUTH_RESPONSE(data)
-            case cfg.codes.server_headers.NAME_QUERY:
-                return self.handle_NAME_QUERY(data)
-            case cfg.codes.server_headers.CHAR_ENUM:
-                return self.handle_CHAR_ENUM(data)
-            case cfg.codes.server_headers.LOGIN_VERIFY_WORLD:
-                return self.handle_LOGIN_VERIFY_WORLD(data)
-            case cfg.codes.server_headers.GUILD_QUERY:
-                return self.handle_GUILD_QUERY(data)
-            case cfg.codes.server_headers.GUILD_EVENT:
-                return self.handle_GUILD_EVENT(data)
-            case cfg.codes.server_headers.GUILD_ROSTER:
-                return self.handle_GUILD_ROSTER(data)
-            case cfg.codes.server_headers.MESSAGECHAT:
-                return self.handle_MESSAGECHAT(data)
-            case cfg.codes.server_headers.CHANNEL_NOTIFY:
-                return self.handle_CHANNEL_NOTIFY(data)
-            case cfg.codes.server_headers.NOTIFICATION:
-                return self.handle_NOTIFICATION(data)
-            case cfg.codes.server_headers.WHO:
-                return self.handle_WHO(data)
-            case cfg.codes.server_headers.SERVER_MESSAGE:
-                return self.handle_SERVER_MESSAGE(data)
-            case cfg.codes.server_headers.INVALIDATE_PLAYER:
-                return self.handle_INVALIDATE_PLAYER(data)
-            case cfg.codes.server_headers.WARDEN_DATA:
-                return self.handle_WARDEN_DATA(data)
-            case cfg.codes.server_headers.GROUP_INVITE:
-                return self.handle_GROUP_INVITE(data)
-            case _:
-                pass
-                # cfg.logger.error(f'No handling method for this type of packet: {hex(packet.id)}')
+        header = cfg.codes.server_headers.get_str(packet.id)
+        if header == 'Unknown':
+            cfg.logger.debug(f'UNHANDLED PACKET: {hex(packet.id)}')
+        else:
+            try:
+                handler = getattr(self, f'handle_{header}')
+            except AttributeError:
+                # cfg.logger.debug(f'Code specified for {header}, but no handler method found')
+                return
+            else:
+                return handler(packet.to_byte_buff())
 
     def handle_AUTH_LOGON_CHALLENGE(self, packet):
         byte_buff = PyByteBuffer.ByteBuffer.wrap(packet.data)

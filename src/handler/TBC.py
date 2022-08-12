@@ -18,18 +18,6 @@ class PacketHandler(Vanilla.PacketHandler):
                  b'\x9eMm\xf9\xbe`\xb0\xb3\xadb\xeeK\x98Q\xb7~\xf1\x10\xa4\x98r\x06\x8a&\x0c\x90\x90\xed{\x83@\xc4~' \
                  b'\xa6\x94\xb6\x98\x18\xc56\xca\xe8\x81aB\xf9\xeb\x07c\xab\x8b\xec'
 
-    def handle_packet(self, packet):
-        data = packet.to_byte_buff()
-        match packet.id:
-            case cfg.codes.server_headers.GM_MESSAGECHAT:
-                return self.handle_MESSAGECHAT(data, gm=True)
-            case cfg.codes.server_headers.MOTD:
-                return self.handle_MOTD(data)
-            case cfg.codes.server_headers.TIME_SYNC_REQ:
-                return self.handle_TIME_SYNC_REQ(data)
-            case _:
-                return super().handle_packet(packet)
-
     @staticmethod
     def get_equip_info(data):
         return data.get(19 * 9, 'little')

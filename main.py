@@ -8,8 +8,9 @@ from src.connector.game import GameConnector
 async def main():
     cfg.logger.info('Running PyWowChat')
     logon_connector = LogonConnector()
-    game_connector = GameConnector()
     await logon_connector.run()
+    del logon_connector
+    game_connector = GameConnector()
     await game_connector.run()
 
 

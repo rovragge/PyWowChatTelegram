@@ -219,7 +219,7 @@ class PacketHandler:
             char.equip_info = self.get_equip_info(data)
             char.bag_display_info = self.get_bag_display_info(data)
             chars.append(char)
-        log_message = 'Available characters:' + ''.join([f'\n\t{char["name"]}' for char in chars])
+        log_message = 'Available characters:' + ''.join([f'\n\t{char.name}' for char in chars])
         cfg.logger.debug(log_message)
         return correct_char
 

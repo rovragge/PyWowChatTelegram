@@ -36,9 +36,10 @@ class PacketHandler:
         self.received_char_enum = False
         self.in_world = False
         self.last_roster_update = None
-        self.player_roster = {}
+        self.players = {}
         self.character = None
-        self.guild = None
+        self.guild = Guild()
+        self.messages_awaiting_name_query = {}
 
     def handle_packet(self, packet):
         header = cfg.codes.server_headers.get_str(packet.id)

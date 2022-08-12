@@ -91,40 +91,22 @@ class _Config:
         return host, port
 
     def get_build(self):
-        match self.version:
-            case '1.11.2':
-                return 5464
-            case '1.12.1':
-                return 5875
-            case '1.12.2':
-                return 6005
-            case '1.12.3':
-                return 6141
-            case '2.4.3':
-                return 8606
-            case '3.2.2':
-                return 10505
-            case '3.3.0':
-                return 11159
-            case '3.3.2':
-                return 11723
-            case '3.3.5':
-                return 12340
-            case _:
-                self.logger.error(f'Build version {self.version} not supported')
-                raise ValueError
+        build_map = {'1.11.2': 5464, '1.12.1': 5875, '1.12.2': 6005, '1.12.3': 6141,
+                     '2.4.3': 8606,
+                     '3.2.2': 10505, '3.3.0': 11159, '3.3.2': 11723, '3.3.5': 12340}
+        build = build_map[self.version]
+        if not build:
+            self.logger.error(f'Build version {self.version} not supported')
+            raise ValueError
+        return build
 
     def get_expansion(self):
-        match self.version[0]:
-            case '1':
-                return 'Vanilla'
-            case '2':
-                return 'TBC'
-            case '3':
-                return 'WotLK'
-            case _:
-                self.logger.error(f'Expansion {self.version} not supported!')
-                raise ValueError
+        expansion_map = {'1': 'Vanilla', '2': 'TBC', '3': 'WotLK'}
+        expansion = expansion_map.get(self.version[0])
+        if not expansion:
+            self.logger.error(f'Expansion {self.version} not supported!')
+            raise ValueError
+        return expansion
 
 
 cfg = _Config()

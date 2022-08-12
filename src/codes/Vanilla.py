@@ -2,14 +2,11 @@ class CodeCollection:
 
     @classmethod
     def get_str(cls, code):
+        string = 'Unknown'
         for attr_name in dir(cls):
             if getattr(cls, attr_name) == code:
                 string = attr_name
                 break
-        else:
-            return 'Unknown'
-        string = string.lower().replace('_', ' ')
-        string = string[0].upper() + string[1:]
         return string
 
     @classmethod

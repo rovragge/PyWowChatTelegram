@@ -319,9 +319,14 @@ class PacketHandler:
 
     @staticmethod
     def handle_guild_event(event, messages):
-        if not cfg.guild_events[event]:
+        if event not in cfg.guild_events:
+            cfg.logger.error(f'No such guild event {event}')
             return
-        if not list(filter(bool, messages)):
+        if not list(filter(bool, messages)) and event != cfg.codes.guild_events.MOTD:
+            cfg.logger.error('Empty guild event message')
+            return
+        if cfg.guild_events[event] is False:
+            cfg.logger.info(f'Guild event disabled')
             return
         if event != cfg.codes.guild_events.MOTD and cfg.character.lower() == messages[0].lower():
             return
@@ -342,7 +347,10 @@ class PacketHandler:
                 msg = f'{messages[1]} has kicked {messages[0]} from the guild'
             case cfg.codes.guild_events.MOTD:
                 msg = f'Guild Message of the Day: {messages[0]}'
-
+            case _:
+                cfg.logger.error(f'Unknown guild event of type {event}')
+                return
+        cfg.logger.info(f'GUILD EVENT {msg}')
         # TODO Send notification to discord
 
     def handle_GUILD_ROSTER(self, data):

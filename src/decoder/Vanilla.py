@@ -28,7 +28,7 @@ class PacketDecoder:
             self.packet_id = buff.get(1)
         if not self.packet_size:
             match self.packet_id:
-                case cfg.codes.realm_headers.AUTH_LOGON_CHALLENGE:
+                case cfg.codes.server_headers.AUTH_LOGON_CHALLENGE:
                     if buff.remaining < 2:
                         self.incomplete_packet = True
                         self.remaining_data = buff.array()
@@ -37,7 +37,7 @@ class PacketDecoder:
                     buff.get(1)
                     self.packet_size = 118 if cfg.codes.logon_auth_results.is_success(buff.get(1)) else 2
                     self.reset_position(saved_position, buff)
-                case cfg.codes.realm_headers.AUTH_LOGON_PROOF:
+                case cfg.codes.server_headers.AUTH_LOGON_PROOF:
                     if buff.remaining < 1:
                         self.incomplete_packet = True
                         self.remaining_data = buff.array()
@@ -48,7 +48,7 @@ class PacketDecoder:
                     else:
                         self.packet_size = 1 if not buff.remaining else 3
                     self.reset_position(saved_position, buff)
-                case cfg.codes.realm_headers.REALM_LIST:
+                case cfg.codes.server_headers.REALM_LIST:
                     if buff.remaining < 2:
                         self.incomplete_packet = True
                         self.remaining_data = buff.array()

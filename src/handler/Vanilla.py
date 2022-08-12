@@ -88,7 +88,7 @@ class PacketHandler:
         else:
             data.get(4)  # account flag
             cfg.logger.info(f'Successfully logged into realm server')
-            packet = Packet(cfg.codes.realm_headers.REALM_LIST, int.to_bytes(0, 4, 'big'))
+            packet = Packet(cfg.codes.server_headers.REALM_LIST, int.to_bytes(0, 4, 'big'))
             self.out_queue.put_nowait(packet)
 
     def handle_REALM_LIST(self, data):

@@ -232,6 +232,9 @@ class ClientHeaders(CodeCollection):
 
 
 class ServerHeaders(CodeCollection):
+    AUTH_LOGON_CHALLENGE = 0x00
+    AUTH_LOGON_PROOF = 0x01
+    REALM_LIST = 0x10
     AUTH_CHALLENGE = 0x01EC
     AUTH_RESPONSE = 0x01EE
     CHANNEL_NOTIFY = 0x99
@@ -250,10 +253,13 @@ class ServerHeaders(CodeCollection):
     WHO = 0x63
 
 
-class RealmHeaders(CodeCollection):
-    AUTH_LOGON_CHALLENGE = 0x00
-    AUTH_LOGON_PROOF = 0x01
-    REALM_LIST = 0x10
+    WEATHER = 0x2f4
+    LEARNED_DANCE_MOVES = 0x455
+
+
+class DiscordHeaders:
+    MESSAGE = 0x00
+    ACTIVITY_UPDATE = 0x01
 
 
 class Codes:
@@ -263,7 +269,6 @@ class Codes:
     game_auth_results = GameAuthResults
     logon_auth_results = LogonAuthResults
     client_headers = ClientHeaders
-    realm_headers = RealmHeaders
     server_headers = ServerHeaders
     guild_events = GuildEvents
     servers_messages = ServerMessages

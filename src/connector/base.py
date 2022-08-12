@@ -42,7 +42,9 @@ class Connector:
                 data = await self.reader.read(Connector.RECV_SIZE)
                 if not data:
                     cfg.logger.error('Received empty packet')
-                    raise ValueError
+                    for task in asyncio.all_tasks():
+                        task.cancel()
+                    self.writer.close()
                 if self.decoder.remaining_data:
                     data = self.decoder.remaining_data + data
                 buff = PyByteBuffer.ByteBuffer.wrap(data)  # While loop accesses same buffer each time

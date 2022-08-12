@@ -34,7 +34,7 @@ class Connector:
                 await self.writer.drain()
             except asyncio.exceptions.CancelledError:
                 break
-            cfg.logger.debug(f'PACKET SENT: {packet}')
+            # cfg.logger.debug(f'PACKET SENT: {packet}')
 
     async def receiver_coroutine(self):
         while not self.writer.is_closing():
@@ -51,7 +51,7 @@ class Connector:
                 while True:
                     packet = self.decoder.decode(buff, self.logon_finished)
                     if packet:
-                        cfg.logger.debug(f'PACKET RECV: {packet}')
+                        # cfg.logger.debug(f'PACKET RECV: {packet}')
                         await self.in_queue.put(packet)
                         if not self.decoder.incomplete_packet:
                             break

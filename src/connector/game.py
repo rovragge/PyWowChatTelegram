@@ -11,7 +11,6 @@ class GameConnector(Connector):
 
     async def run(self):
         cfg.logger.info(f'Connecting to game server: {cfg.realm["name"]}')
-        cfg.logger.debug(f'Connecting to game server: {cfg.realm["name"]} - {cfg.realm["host"]}:{cfg.realm["port"]}')
         try:
             self.reader, self.writer = await asyncio.open_connection(cfg.realm['host'], cfg.realm['port'])
         except socket.gaierror:

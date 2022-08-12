@@ -18,7 +18,6 @@ class LogonConnector(Connector):
         host, port = cfg.parse_realm_list()
         await self.out_queue.put(self.get_initial_packet())
         cfg.logger.info(f'Connecting to logon server: {host}')
-        cfg.logger.debug(f'Connecting to logon server: {host}:{port}')
         try:
             self.reader, self.writer = await asyncio.open_connection(host, port)
         except socket.gaierror:

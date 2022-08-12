@@ -135,15 +135,6 @@ class CharGenders(CodeCollection):
     NONE = 2
 
 
-class CommonChannels(CodeCollection):
-    GENERAL = 0x01
-    TRADE = 0x02
-    LOCAL_DEFENSE = 0x16
-    WORLD_DEFENSE = 0x17
-    GUILD_RECRUITMENT = 0x00
-    LOOKING_FOR_GROUP = 0x1A
-
-
 class ChatChannels(CodeCollection):
     SAY = 0x00
     GUILD = 0x03
@@ -161,6 +152,12 @@ class ChatChannels(CodeCollection):
     CHANNEL_NOTICE_USER = 0x13
     ACHIEVEMENT = 0x30
     GUILD_ACHIEVEMENT = 0x31
+    GENERAL = 0x01
+    TRADE = 0x02
+    LOCAL_DEFENSE = 0x16
+    WORLD_DEFENSE = 0x17
+    GUILD_RECRUITMENT = 0x00
+    LOOKING_FOR_GROUP = 0x1A
 
 
 class ChatEvents(CodeCollection):
@@ -269,4 +266,3 @@ class Codes:
     servers_messages = ServerMessages
     chat_events = ChatEvents
     chat_channels = ChatChannels
-    common_channels = CommonChannels

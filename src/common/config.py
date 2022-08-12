@@ -26,20 +26,15 @@ class _Config:
         self.expansion = self.get_expansion()
         self.server_MOTD_enabled = bool(xml_obj.wow.server_motd_enabled)
         self.buff_size = int(xml_obj.wow.buff_size)
-
-        self.discord = None
         self.realm = None
         self.codes = getattr(import_module(f'src.codes.{self.expansion}'), 'Codes')
         self.crypt = getattr(import_module(f'src.header_crypt.{self.expansion}'), 'GameHeaderCrypt')()
+        self.token = str(xml_obj.discord.token)
+        self.maps = {self.codes.chat_channels.get_from_str(x.tag.upper()): x for x in
+                     xml_obj.discord.channels.getchildren()}
+        self.guild_events = {self.codes.guild_events.get_from_str(e.tag.upper()): bool(e) for e in
+                             xml_obj.guild_events.getchildren()}
 
-        self.guild_events = {self.codes.guild_events.SIGNED_ON: bool(xml_obj.guild_events.online),
-                             self.codes.guild_events.SIGNED_OFF: bool(xml_obj.guild_events.offline),
-                             self.codes.guild_events.JOINED: bool(xml_obj.guild_events.joined),
-                             self.codes.guild_events.LEFT: bool(xml_obj.guild_events.left),
-                             self.codes.guild_events.REMOVED: bool(xml_obj.guild_events.removed),
-                             self.codes.guild_events.PROMOTED: bool(xml_obj.guild_events.promoted),
-                             self.codes.guild_events.DEMOTED: bool(xml_obj.guild_events.demoted),
-                             self.codes.guild_events.MOTD: bool(xml_obj.guild_events.motd)}
         self.logger.debug('Config values:\n\t'
                           # f'account = {self.account}\n\t'
                           # f'password = {self.password}\n\t'

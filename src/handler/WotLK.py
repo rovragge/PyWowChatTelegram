@@ -70,6 +70,9 @@ class PacketHandler(TBC.PacketHandler):
     def parse_chat_message(self, data, gm):
         msg = ChatMessage()
         msg.channel = data.get(1)
+        if msg.channel == cfg.codes.chat_channels.GUILD_ACHIEVEMENT:
+            # TODO achievement handling
+            return
         msg.language = data.get(4, 'little')
         if msg.language == -1 or msg.language == 4294967295:  # addon messages and questionable stuff
             return
@@ -86,12 +89,7 @@ class PacketHandler(TBC.PacketHandler):
         text_len = data.get(4, 'little') - 1
         msg.text = utils.read_string(data, text_len)
         data.get(2)  # null terminator + chat tag
-        if tp == cfg.codes.chat_channels.GUILD_ACHIEVEMENT:
-            self.handle_achievement_event(guid, data.get(4, 'little'))
-        else:
-            msg = ChatMessage(guid, tp, text, channel_name)
-            cfg.logger.info(f'Chat message: {msg.text}')
-            return msg
+        return msg
 
     def handle_achievement_event(self, guid, achievement_id):
         if not self.guild:

@@ -7,7 +7,7 @@ import src.common.utils as utils
 
 from src.common.config import cfg
 from src.handler import TBC
-from src.common.dataclasses import ChatMessage, Character
+from src.common.commonclasses import ChatMessage, Character
 
 
 class PacketHandler(TBC.PacketHandler):

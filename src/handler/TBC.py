@@ -3,7 +3,7 @@ import time
 from src.common import utils as utils
 from src.common.config import cfg
 from src.handler import Vanilla
-from src.common.dataclasses import Packet, ChatMessage, Character
+from src.common.commonclasses import Packet, ChatMessage, Character
 
 
 class PacketHandler(Vanilla.PacketHandler):

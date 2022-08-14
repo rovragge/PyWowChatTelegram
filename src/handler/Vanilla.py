@@ -10,7 +10,7 @@ from src.common.config import cfg
 import src.common.utils as utils
 from src.common.SRP import SRPHandler
 from src.common.utils import read_string
-from src.common.dataclasses import Packet, ChatMessage, Guild, Character
+from src.common.commonclasses import Packet, ChatMessage, Guild, Character
 
 
 class PacketHandler:

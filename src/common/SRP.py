@@ -34,7 +34,7 @@ class SRPHandler:
         md.update(int.to_bytes(self.B, 32, 'little'))
         self.u = int.from_bytes(md.digest(), 'little')
 
-        md = hashlib.sha1(bytes(f'{cfg.account}:{cfg.password}', 'utf-8'))
+        md = hashlib.sha1(bytes(f'{cfg.connection_info.account}:{cfg.connection_info.password}', 'utf-8'))
         p = md.digest()
         md = hashlib.sha1(int.to_bytes(self.salt, 32, 'little'))
         md.update(p)
@@ -68,7 +68,7 @@ class SRPHandler:
         for i in range(20):
             hash[i] = (hash[i] ^ digest[i])
 
-        md = hashlib.sha1(bytes(cfg.account, 'utf-8'))
+        md = hashlib.sha1(bytes(cfg.connection_info.account, 'utf-8'))
         t4 = md.digest()
 
         self.K = int.from_bytes(vk, 'little')
@@ -118,7 +118,7 @@ class SRPHandler:
             }
         }
         try:
-            hash = hashes[cfg.platform][cfg.build]
+            hash = hashes[cfg.connection_info.platform][cfg.connection_info.build]
         except KeyError:
             hash = bytearray(20)
         return hash

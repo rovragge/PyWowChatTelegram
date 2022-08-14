@@ -21,13 +21,13 @@ class PacketHandler(TBC.PacketHandler):
 
     def parse_auth_challenge(self, data):
         buff = PyByteBuffer.ByteBuffer.allocate(400)
-        bin_account = bytes(cfg.account, 'utf-8')
+        bin_account = bytes(cfg.connection_info.account, 'utf-8')
 
         data.get(4)
         server_seed = data.get(4, 'big')
         client_seed = int.from_bytes(secrets.token_bytes(4), 'big')
         buff.put(0, 2)
-        buff.put(cfg.build, 4, 'little')
+        buff.put(cfg.connection_info.build, 4, 'little')
         buff.put(0, 4, 'little')
         buff.put(bin_account)
         buff.put(0, 5)

@@ -31,7 +31,7 @@ class GameConnector(Connector):
             case 2:  # World login verified
                 asyncio.create_task(self.ping_coroutine(30, 30), name='ping')
                 asyncio.create_task(self.roster_update_coroutine(61, 61), name='roster_update')
-                if cfg.version != 'Vanilla':
+                if cfg.connection_info.expansion != 'Vanilla':
                     asyncio.create_task(self.keep_alive_coroutine(15, 30), name='keep_alive')
 
     async def ping_coroutine(self, initial_delay, delay):

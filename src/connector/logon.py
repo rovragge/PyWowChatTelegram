@@ -16,9 +16,9 @@ class LogonConnector(Connector):
 
     async def run(self):
         await self.out_queue.put(self.get_initial_packet())
-        cfg.logger.info(f'Connecting to logon server: {host}')
+        cfg.logger.info(f'Connecting to logon server: {cfg.connection_info.host}')
         try:
-            self.reader, self.writer = await asyncio.open_connection(host, port)
+            self.reader, self.writer = await asyncio.open_connection(cfg.connection_info.host, cfg.connection_info.port)
         except socket.gaierror:
             cfg.logger.error('Can\'t establish connection')
             return
@@ -35,19 +35,19 @@ class LogonConnector(Connector):
                 self.main_task.cancel()
 
     def get_initial_packet(self):
-        version = [bytes(x, 'utf-8') for x in cfg.version.split('.')]
-        account = bytes(cfg.account, 'utf-8')
+        version = [bytes(x, 'utf-8') for x in cfg.connection_info.version.split('.')]
+        account = bytes(cfg.connection_info.account, 'utf-8')
         buffer = PyByteBuffer.ByteBuffer.allocate(100)
-        buffer.put(3 if cfg.expansion == 'Vanilla' else 8)
+        buffer.put(3 if cfg.connection_info.expansion == 'Vanilla' else 8)
         buffer.put(30 + len(account), endianness='little', size=2)
         buffer.put(b'WoW\x00')
         buffer.put(version[0])
         buffer.put(version[1])
         buffer.put(version[2])
-        buffer.put(cfg.build, endianness='little')
+        buffer.put(cfg.connection_info.build, endianness='little')
         buffer.put(self.str_to_int('x86'), endianness='little', size=4)
-        buffer.put(self.str_to_int(cfg.platform), endianness='little', size=4)
-        buffer.put(self.str_to_int(cfg.locale), endianness='little', size=4)
+        buffer.put(self.str_to_int(cfg.connection_info.platform), endianness='little', size=4)
+        buffer.put(self.str_to_int(cfg.connection_info.locale), endianness='little', size=4)
         buffer.put(b'\x00\x00\x00\x00\x7f\x00\x00\x01')  # 0 + 0 + 127 (size=4) + 0 + 0 + 1
         buffer.put(len(account))
         buffer.put(account)

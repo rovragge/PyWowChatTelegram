@@ -92,11 +92,10 @@ class PacketHandler:
             self.out_queue.put_nowait(packet)
 
     def handle_REALM_LIST(self, data):
-        realm_name = cfg.realm_name
         realms = self.parse_realm_list(data)
-        target_realm = tuple(filter(lambda r: r['name'].lower() == realm_name.lower(), realms))[0]
+        target_realm = tuple(filter(lambda r: r['name'].lower() == cfg.connection_info.realm_name.lower(), realms))[0]
         if not target_realm:
-            cfg.logger.error(f'Realm {realm_name} not found!')
+            cfg.logger.error(f'Realm {cfg.connection_info.realm_name} not found!')
             return
         target_realm['session_key'] = int.to_bytes(self.srp_handler.K, 40, 'little')
         cfg.realm = target_realm
@@ -104,7 +103,7 @@ class PacketHandler:
 
     @staticmethod
     def parse_realm_list(data):  # different for Vanilla/TBC+
-        not_vanilla = cfg.expansion != 'Vanilla'
+        not_vanilla = cfg.connection_info.expansion != 'Vanilla'
         data.get(4)
         realms = []
         realm_count = data.get(2, endianness='little')
@@ -145,7 +144,7 @@ class PacketHandler:
         server_seed = int.to_bytes(data.get(4), 4, 'big')
         buff = PyByteBuffer.ByteBuffer.allocate(400)
         buff.put(0)
-        buff.put(cfg.build, 4, 'little')
+        buff.put(cfg.connection_info.build, 4, 'little')
         buff.put(account_bytes)
         buff.put(0)
         buff.put(client_seed)
@@ -212,7 +211,7 @@ class PacketHandler:
             char.position.z = data.get(4, 'little')
             char.guild_guid = data.get(4, 'little')
             char.flags = data.get(4, 'little')
-            if cfg.expansion == 'WotLK':
+            if cfg.connection_info.expansion == 'WotLK':
                 data.get(4)  # character customize flags
             data.get(1)  # first login
             char.pet_info = data.get(12, 'little')

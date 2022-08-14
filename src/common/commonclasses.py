@@ -90,3 +90,33 @@ class Guild:
 
     def __bool__(self):
         return self.guid is not None
+
+
+class ConnectionInfo:
+    def __init__(self):
+        self.account = None
+        self.password = None
+        self.locale = None
+        self.platform = None
+        self.version = None
+        self.realm_name = None
+        self.host = None
+        self.port = None
+        self.expansion = None
+        self.build = None
+
+    def get_build(self):
+        build_map = {'1.11.2': 5464, '1.12.1': 5875, '1.12.2': 6005, '1.12.3': 6141,
+                     '2.4.3': 8606,
+                     '3.2.2': 10505, '3.3.0': 11159, '3.3.2': 11723, '3.3.5': 12340}
+        build = build_map[self.version]
+        if not build:
+            raise ValueError
+        return build
+
+    def get_expansion(self):
+        expansion_map = {'1': 'Vanilla', '2': 'TBC', '3': 'WotLK'}
+        expansion = expansion_map.get(self.version[0])
+        if not expansion:
+            raise ValueError
+        return expansion

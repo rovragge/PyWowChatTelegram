@@ -3,6 +3,8 @@ import os
 import datetime
 import sys
 
+from src.common.commonclasses import Character, Guild, ConnectionInfo
+
 import lxml.objectify
 from importlib import import_module
 
@@ -12,22 +14,28 @@ class _Config:
     def __init__(self):
         with open(os.path.join(os.path.dirname(sys.argv[0]), 'config.xml'), 'r', encoding='utf-8') as xml_file:
             xml_obj = lxml.objectify.fromstring(xml_file.read())
+
+        self.connection_info = ConnectionInfo()
+        self.character = Character()
+        self.guild = Guild()
         self.logger = self.setup_log(xml_obj.logger)
-        self.account = str(xml_obj.wow.account).upper()
-        self.password = str(xml_obj.wow.password).upper()
-        self.character = str(xml_obj.wow.character).lower()
-        self.version = str(xml_obj.wow.version)
-        self.platform = str(xml_obj.wow.platform)
-        self.realmlist = str(xml_obj.wow.realmlist)
-        self.locale = str(xml_obj.wow.locale)
-        self.realm_name = str(xml_obj.wow.realm)
-        self.host, self.port = self.parse_realm_list()
-        self.build = self.get_build()
-        self.expansion = self.get_expansion()
+
+        self.connection_info.account = str(xml_obj.wow.account).upper()
+        self.connection_info.password = str(xml_obj.wow.password).upper()
+        self.connection_info.version = str(xml_obj.wow.version)
+        self.connection_info.platform = str(xml_obj.wow.platform)
+        self.connection_info.locale = str(xml_obj.wow.locale)
+        self.connection_info.realm_name = str(xml_obj.wow.realm)
+        self.connection_info.host, self.connection_info.port = self.parse_realm_list(str(xml_obj.wow.realmlist))
+        self.connection_info.build = self.connection_info.get_build()
+        self.connection_info.expansion = self.connection_info.get_expansion()
+
+        self.character.name = str(xml_obj.wow.character).lower()
+
         self.server_MOTD_enabled = bool(xml_obj.wow.server_motd_enabled)
         self.realm = None
-        self.codes = getattr(import_module(f'src.codes.{self.expansion}'), 'Codes')
-        self.crypt = getattr(import_module(f'src.header_crypt.{self.expansion}'), 'GameHeaderCrypt')()
+        self.codes = getattr(import_module(f'src.codes.{self.connection_info.expansion}'), 'Codes')
+        self.crypt = getattr(import_module(f'src.header_crypt.{self.connection_info.expansion}'), 'GameHeaderCrypt')()
         self.token = str(xml_obj.discord.token)
         self.maps = {self.codes.chat_channels.get_from_str(x.tag.upper()): x for x in
                      xml_obj.discord.channels.getchildren()}
@@ -37,14 +45,14 @@ class _Config:
         self.logger.debug('Config values:\n\t'
                           # f'account = {self.account}\n\t'
                           # f'password = {self.password}\n\t'
-                          f'platform = {self.platform}\n\t'
-                          f'locale = {self.locale}\n\t'
-                          f'expansion = {self.expansion}\n\t'
-                          f'version = {self.version}\n\t'
-                          f'build = {self.build}\n\t'
-                          f'host = {self.host}\n\t'
-                          f'port = {self.port}\n\t'
-                          f'realm = {self.realm_name}')
+                          f'platform = {self.connection_info.platform}\n\t'
+                          f'locale = {self.connection_info.locale}\n\t'
+                          f'expansion = {self.connection_info.expansion}\n\t'
+                          f'version = {self.connection_info.version}\n\t'
+                          f'build = {self.connection_info.build}\n\t'
+                          f'host = {self.connection_info.host}\n\t'
+                          f'port = {self.connection_info.port}\n\t'
+                          f'realm = {self.connection_info.realm_name}')
 
     @staticmethod
     def setup_log(logger_cfg):
@@ -74,33 +82,17 @@ class _Config:
             log.addHandler(handler)
         return log
 
-    def parse_realm_list(self):
-        split_pos = self.realmlist.find(':')
+    @staticmethod
+    def parse_realm_list(realmlist):
+        split_pos = realmlist.find(':')
         if split_pos == -1:
-            host = self.realmlist
+            host = realmlist
             port = 3724
         else:
-            host = self.realmlist[:split_pos]
-            port = self.realmlist[:split_pos + 1]
+            host = realmlist[:split_pos]
+            port = realmlist[:split_pos + 1]
         return host, port
 
-    def get_build(self):
-        build_map = {'1.11.2': 5464, '1.12.1': 5875, '1.12.2': 6005, '1.12.3': 6141,
-                     '2.4.3': 8606,
-                     '3.2.2': 10505, '3.3.0': 11159, '3.3.2': 11723, '3.3.5': 12340}
-        build = build_map[self.version]
-        if not build:
-            self.logger.error(f'Build version {self.version} not supported')
-            raise ValueError
-        return build
-
-    def get_expansion(self):
-        expansion_map = {'1': 'Vanilla', '2': 'TBC', '3': 'WotLK'}
-        expansion = expansion_map.get(self.version[0])
-        if not expansion:
-            self.logger.error(f'Expansion {self.version} not supported!')
-            raise ValueError
-        return expansion
 
 
 cfg = _Config()

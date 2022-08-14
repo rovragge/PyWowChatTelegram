@@ -57,17 +57,11 @@ class Globals:
     @staticmethod
     def setup_log(logger_cfg):
         log = logging.getLogger(str(logger_cfg.name) if logger_cfg.name else 'app')
-        match str(logger_cfg.level).lower():
-            case 'critical':
-                log.setLevel(logging.CRITICAL)
-            case 'error':
-                log.setLevel(logging.ERROR)
-            case 'warning':
-                log.setLevel(logging.WARNING)
-            case 'info':
-                log.setLevel(logging.INFO)
-            case 'debug' | _:
-                log.setLevel(logging.DEBUG)
+        try:
+            log_level = getattr(logging, str(logger_cfg.level).upper())
+            log.setLevel(log_level)
+        except ValueError or AttributeError:
+            log.setLevel(logging.DEBUG)
         handlers = []
         if logger_cfg.to_file:
             now = datetime.datetime.now()

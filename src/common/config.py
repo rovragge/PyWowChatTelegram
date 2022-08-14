@@ -25,7 +25,6 @@ class _Config:
         self.build = self.get_build()
         self.expansion = self.get_expansion()
         self.server_MOTD_enabled = bool(xml_obj.wow.server_motd_enabled)
-        self.buff_size = int(xml_obj.wow.buff_size)
         self.realm = None
         self.codes = getattr(import_module(f'src.codes.{self.expansion}'), 'Codes')
         self.crypt = getattr(import_module(f'src.header_crypt.{self.expansion}'), 'GameHeaderCrypt')()

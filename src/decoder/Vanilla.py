@@ -1,4 +1,4 @@
-from src.common.config import cfg
+from src.common.config import glob
 from src.common.commonclasses import Packet
 
 
@@ -20,7 +20,7 @@ class PacketDecoder:
                 self.remaining_data = buff.array()
                 return
             self.packet_id, self.packet_size = self.parse_encrypted_header(
-                buff) if cfg.crypt.initialized else self.parse_header(buff)
+                buff) if glob.crypt.initialized else self.parse_header(buff)
         return self.compose_packet(buff)
 
     def decode_logon(self, buff):
@@ -28,27 +28,27 @@ class PacketDecoder:
             self.packet_id = buff.get(1)
         if not self.packet_size:
             match self.packet_id:
-                case cfg.codes.server_headers.AUTH_LOGON_CHALLENGE:
+                case glob.codes.server_headers.AUTH_LOGON_CHALLENGE:
                     if buff.remaining < 2:
                         self.incomplete_packet = True
                         self.remaining_data = buff.array()
                         return
                     saved_position = buff.position
                     buff.get(1)
-                    self.packet_size = 118 if cfg.codes.logon_auth_results.is_success(buff.get(1)) else 2
+                    self.packet_size = 118 if glob.codes.logon_auth_results.is_success(buff.get(1)) else 2
                     self.reset_position(saved_position, buff)
-                case cfg.codes.server_headers.AUTH_LOGON_PROOF:
+                case glob.codes.server_headers.AUTH_LOGON_PROOF:
                     if buff.remaining < 1:
                         self.incomplete_packet = True
                         self.remaining_data = buff.array()
                         return
                     saved_position = buff.position
-                    if cfg.codes.logon_auth_results.is_success(buff.get(1)):
-                        self.packet_size = 25 if cfg.connection_info.expansion == 'Vanilla' else 31
+                    if glob.codes.logon_auth_results.is_success(buff.get(1)):
+                        self.packet_size = 25 if glob.connection_info.expansion == 'Vanilla' else 31
                     else:
                         self.packet_size = 1 if not buff.remaining else 3
                     self.reset_position(saved_position, buff)
-                case cfg.codes.server_headers.REALM_LIST:
+                case glob.codes.server_headers.REALM_LIST:
                     if buff.remaining < 2:
                         self.incomplete_packet = True
                         self.remaining_data = buff.array()
@@ -71,7 +71,7 @@ class PacketDecoder:
 
     def parse_encrypted_header(self, buff):
         header = buff.get(PacketDecoder.HEADER_LENGTH)
-        decrypted = cfg.crypt.decrypt(header)
+        decrypted = glob.crypt.decrypt(header)
         size = ((decrypted[0] & 0xFF) << 8 | decrypted[1] & 0xFF) - 2
         packet_id = (decrypted[3] & 0xFF) << 8 | decrypted[2] & 0xFF
         return size, packet_id

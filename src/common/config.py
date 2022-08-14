@@ -9,7 +9,7 @@ import lxml.objectify
 from importlib import import_module
 
 
-class _Config:
+class Globals:
 
     def __init__(self):
         with open(os.path.join(os.path.dirname(sys.argv[0]), 'config.xml'), 'r', encoding='utf-8') as xml_file:
@@ -94,5 +94,4 @@ class _Config:
         return host, port
 
 
-
-cfg = _Config()
+glob = Globals()

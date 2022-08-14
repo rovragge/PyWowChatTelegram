@@ -3,7 +3,7 @@ from importlib import import_module
 
 import PyByteBuffer
 
-from src.common.config import cfg
+from src.common.config import glob
 
 
 class Connector:
@@ -15,9 +15,13 @@ class Connector:
         self.main_task = None
         self.in_queue = asyncio.Queue()
         self.out_queue = asyncio.Queue()
-        self.decoder = getattr(import_module(f'src.decoder.{cfg.expansion}'), 'PacketDecoder')()
-        self.encoder = getattr(import_module(f'src.encoder.{cfg.expansion}'), 'PacketEncoder')()
-        self.handler = getattr(import_module(f'src.handler.{cfg.expansion}'), 'PacketHandler')(self.out_queue)
+        self.discord_queue = asyncio.Queue()
+
+        self.decoder = getattr(import_module(f'src.decoder.{glob.connection_info.expansion}'), 'PacketDecoder')()
+        self.encoder = getattr(import_module(f'src.encoder.{glob.connection_info.expansion}'), 'PacketEncoder')()
+        self.handler = getattr(import_module(f'src.handler.{glob.connection_info.expansion}'), 'PacketHandler')(
+            self.out_queue,
+            self.discord_queue)
         self.logon_finished = True
 
     async def run(self):
@@ -41,7 +45,7 @@ class Connector:
             try:
                 data = await self.reader.read(Connector.RECV_SIZE)
                 if not data:
-                    cfg.logger.error('Received empty packet')
+                    glob.logger.error('Received empty packet')
                     for task in asyncio.all_tasks():
                         task.cancel()
                     self.writer.close()

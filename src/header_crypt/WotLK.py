@@ -16,13 +16,13 @@ class GameHeaderCrypt(Vanilla.GameHeaderCrypt):
 
     def decrypt(self, btarr):
         if not self.initialized:
-            config.cfg.logger.debug('decrypt method called on uninitialized GameHeaderCrypt')
+            config.glob.logger.debug('decrypt method called on uninitialized GameHeaderCrypt')
             return btarr
         return self.server_crypt.decrypt(bytes(btarr))
 
     def encrypt(self, btarr):
         if not self.initialized:
-            config.cfg.logger.debug('encrypt method called on uninitialized GameHeaderCrypt')
+            config.glob.logger.debug('encrypt method called on uninitialized GameHeaderCrypt')
             return btarr
         return self.client_crypt.encrypt(bytes(btarr))
 

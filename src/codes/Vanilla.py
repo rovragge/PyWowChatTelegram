@@ -273,9 +273,8 @@ class ServerHeaders(CodeCollection):
     LOGIN_SETTIMESPEED = 0x042
     SET_FORCED_REACTIONS = 0x2a5
     INIT_WORLD_STATES = 0x2c2
-
+    EMOTE = 0x103
     PONG = 0x1dd
-
     MONSTER_MOVE = 0x0DD
     DESTROY_OBJECT = 0x0AA
     UPDATE_OBJECT = 0x0A9
@@ -310,6 +309,8 @@ class ServerHeaders(CodeCollection):
     MOVE_SET_RUN_BACK_SPEED = 0x0CF
     MOVE_TIME_SKIPPED = 0x319
     MOVE_TELEPORT = 0x0C5
+    MOVE_ROOT = 0x0EC
+    MOVE_UNROOT = 0x0ED
 
     SPLINE_SET_RUN_SPEED = 0x2FE
     SPLINE_SET_RUN_BACK_SPEED = 0x2FF
@@ -390,3 +391,4 @@ class Codes:
     servers_messages = ServerMessages
     chat_events = ChatEvents
     chat_channels = ChatChannels
+    discord_headers = DiscordHeaders

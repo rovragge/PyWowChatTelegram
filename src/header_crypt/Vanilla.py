@@ -13,7 +13,7 @@ class GameHeaderCrypt:
     def decrypt(self, btarr):
         x = None
         if not self.initialized:
-            config.cfg.logger.debug('decrypt method called on uninitialized GameHeaderCrypt')
+            config.glob.logger.debug('decrypt method called on uninitialized GameHeaderCrypt')
             return btarr
         for n_byte, _ in enumerate(btarr):
             self.recv_i %= len(self.key)
@@ -26,7 +26,7 @@ class GameHeaderCrypt:
     def encrypt(self, btarr):
         x = None
         if not self.initialized:
-            config.cfg.logger.debug('encrypt method called on uninitialized GameHeaderCrypt')
+            config.glob.logger.debug('encrypt method called on uninitialized GameHeaderCrypt')
             return btarr
         for n_byte, _ in enumerate(btarr):
             self.send_i %= len(self.key)

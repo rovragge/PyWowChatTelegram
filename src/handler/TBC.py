@@ -1,7 +1,7 @@
 import time
 
 from src.common import utils as utils
-from src.common.config import cfg
+from src.common.config import glob
 from src.handler import Vanilla
 from src.common.commonclasses import Packet, ChatMessage, Character
 
@@ -32,10 +32,10 @@ class PacketHandler(Vanilla.PacketHandler):
         if msg.language in (-1, 4294967295):  # addon messages and questionable stuff
             return
         msg.guid = data.get(8, 'little')
-        if msg.channel != cfg.codes.chat_channels.SYSTEM and msg.guid == self.character.guid:
+        if msg.channel != glob.codes.chat_channels.SYSTEM and msg.guid == self.character.guid:
             return
         data.get(4)
-        msg.channel_name = utils.read_string(data) if msg.channel == cfg.codes.chat_channels.CHANNEL else None
+        msg.channel_name = utils.read_string(data) if msg.channel == glob.codes.chat_channels.CHANNEL else None
         data.get(8, 'little')  # guid
         txt_len = data.get(4, 'little') - 1
         msg.text = utils.read_string(data, txt_len)
@@ -44,8 +44,8 @@ class PacketHandler(Vanilla.PacketHandler):
     def parse_roster(self, data):
         n_of_chars = data.get(4, 'little')
         roster = {}
-        cfg.guild.motd = utils.read_string(data)
-        cfg.guild.info = utils.read_string(data)
+        glob.guild.motd = utils.read_string(data)
+        glob.guild.info = utils.read_string(data)
         n_of_ranks = data.get(4, 'little')
         for _ in range(n_of_ranks):
             rank_info = data.get(8 + 48, 'little')  # TODO split into rank info and guild bank info
@@ -66,7 +66,7 @@ class PacketHandler(Vanilla.PacketHandler):
         return roster
 
     def handle_MOTD(self, data):
-        if cfg.server_MOTD_enabled:
+        if glob.server_MOTD_enabled:
             messages = self.parse_server_MOTD(data)
             for message in messages:
                 pass
@@ -78,7 +78,7 @@ class PacketHandler(Vanilla.PacketHandler):
         for _ in range(n_of_messages):
             msg = ChatMessage()
             msg.guid = 0
-            msg.channel = cfg.codes.chat_channels.SYSTEM
+            msg.channel = glob.codes.chat_channels.SYSTEM
             msg.text = utils.read_string(data)
             messages.append(msg)
         return messages
@@ -87,4 +87,4 @@ class PacketHandler(Vanilla.PacketHandler):
         counter = data.get(4, 'little')
         uptime = (time.time_ns() - self.connect_time) // 1000000
         out_data = int.to_bytes(counter, 4, 'little') + int.to_bytes(uptime, 4, 'little')
-        self.out_queue.put_nowait(Packet(cfg.codes.client_headers.TIME_SYNC_RESP, out_data))
+        self.out_queue.put_nowait(Packet(glob.codes.client_headers.TIME_SYNC_RESP, out_data))

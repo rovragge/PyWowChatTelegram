@@ -5,7 +5,7 @@ import PyByteBuffer
 
 import src.common.utils as utils
 
-from src.common.config import cfg
+from src.common.config import glob
 from src.handler import TBC
 from src.common.commonclasses import ChatMessage, Character
 
@@ -21,26 +21,26 @@ class PacketHandler(TBC.PacketHandler):
 
     def parse_auth_challenge(self, data):
         buff = PyByteBuffer.ByteBuffer.allocate(400)
-        bin_account = bytes(cfg.connection_info.account, 'utf-8')
+        bin_account = bytes(glob.connection_info.account, 'utf-8')
 
         data.get(4)
         server_seed = data.get(4, 'big')
         client_seed = int.from_bytes(secrets.token_bytes(4), 'big')
         buff.put(0, 2)
-        buff.put(cfg.connection_info.build, 4, 'little')
+        buff.put(glob.connection_info.build, 4, 'little')
         buff.put(0, 4, 'little')
         buff.put(bin_account)
         buff.put(0, 5)
         buff.put(client_seed)
         buff.put(0, 8)
-        buff.put(cfg.realm['id'], 4, 'little')
+        buff.put(glob.realm['id'], 4, 'little')
         buff.put(3, 8, 'little')
 
         md = hashlib.sha1(bin_account)
         md.update(bytearray(4))
         md.update(int.to_bytes(client_seed, 4, 'big'))
         md.update(int.to_bytes(server_seed, 4, 'big'))
-        md.update(cfg.realm['session_key'])
+        md.update(glob.realm['session_key'])
 
         buff.put(md.digest())
         buff.put(PacketHandler.ADDON_INFO)
@@ -57,7 +57,7 @@ class PacketHandler(TBC.PacketHandler):
         name_unknown = data.get(1)
         char = Character()
         if name_unknown:
-            cfg.logger.error(f'Name not known for guid {guid}')
+            glob.logger.error(f'Name not known for guid {guid}')
             return char
         char.guid = guid
         char.name = utils.read_string(data)
@@ -70,20 +70,20 @@ class PacketHandler(TBC.PacketHandler):
     def parse_chat_message(self, data, gm):
         msg = ChatMessage()
         msg.channel = data.get(1)
-        if msg.channel == cfg.codes.chat_channels.GUILD_ACHIEVEMENT:
+        if msg.channel == glob.codes.chat_channels.GUILD_ACHIEVEMENT:
             # TODO achievement handling
             return
         msg.language = data.get(4, 'little')
         if msg.language == -1 or msg.language == 4294967295:  # addon messages and questionable stuff
             return
         msg.guid = data.get(8, 'little')
-        if msg.channel != cfg.codes.chat_channels.SYSTEM and msg.guid == cfg.character.guid:
+        if msg.channel != glob.codes.chat_channels.SYSTEM and msg.guid == glob.character.guid:
             return
         data.get(4)
         if gm:
             data.get(4)
             utils.read_string(data)
-        msg.channel_name = utils.read_string(data) if msg.channel == cfg.codes.chat_channels.CHANNEL else None
+        msg.channel_name = utils.read_string(data) if msg.channel == glob.codes.chat_channels.CHANNEL else None
         # TODO Check if channel is handled or is an achievement message
         data.get(8, 'little')  # guid
         text_len = data.get(4, 'little') - 1
@@ -92,12 +92,12 @@ class PacketHandler(TBC.PacketHandler):
         return msg
 
     def handle_achievement_event(self, guid, achievement_id):
-        if not cfg.guild:
-            cfg.logger.error('Received achievement event, but not in guild')
+        if not glob.guild:
+            glob.logger.error('Received achievement event, but not in guild')
             return
-        player = cfg.guild.roster.get(guid)
+        player = glob.guild.roster.get(guid)
         if not player:
-            cfg.logger.error(f'Received achievement event, but no player with guid {guid} in roster')
+            glob.logger.error(f'Received achievement event, but no player with guid {guid} in roster')
             return
         # TODO send discord notification (player.name, achievement_id)
 

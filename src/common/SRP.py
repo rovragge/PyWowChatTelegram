@@ -1,13 +1,13 @@
 import hashlib
 import secrets
-from src.common.config import cfg
+from src.common.config import glob
 
 
 class SRPHandler:
     def __init__(self, B, g, N, salt, security_flag):
 
         if security_flag:
-            cfg.logger.error(
+            glob.logger.error(
                 'Two factor authentication is enabled for this account. Please disable it or use another account')
             raise ValueError
 
@@ -34,7 +34,7 @@ class SRPHandler:
         md.update(int.to_bytes(self.B, 32, 'little'))
         self.u = int.from_bytes(md.digest(), 'little')
 
-        md = hashlib.sha1(bytes(f'{cfg.connection_info.account}:{cfg.connection_info.password}', 'utf-8'))
+        md = hashlib.sha1(bytes(f'{glob.connection_info.account}:{glob.connection_info.password}', 'utf-8'))
         p = md.digest()
         md = hashlib.sha1(int.to_bytes(self.salt, 32, 'little'))
         md.update(p)
@@ -68,7 +68,7 @@ class SRPHandler:
         for i in range(20):
             hash[i] = (hash[i] ^ digest[i])
 
-        md = hashlib.sha1(bytes(cfg.connection_info.account, 'utf-8'))
+        md = hashlib.sha1(bytes(glob.connection_info.account, 'utf-8'))
         t4 = md.digest()
 
         self.K = int.from_bytes(vk, 'little')
@@ -83,7 +83,7 @@ class SRPHandler:
         md.update(vk)
         self.M = md.digest()
 
-        cfg.logger.debug(
+        glob.logger.debug(
             f'SRP values (little endianness):\n\t'
             f'k = {self.k}\n\t'
             f'g = {self.g}\n\t'
@@ -118,7 +118,7 @@ class SRPHandler:
             }
         }
         try:
-            hash = hashes[cfg.connection_info.platform][cfg.connection_info.build]
+            hash = hashes[glob.connection_info.platform][glob.connection_info.build]
         except KeyError:
             hash = bytearray(20)
         return hash

@@ -1,12 +1,12 @@
 import asyncio
 
-from src.common.config import cfg
+from src.common.config import glob
 from src.connector.logon import LogonConnector
 from src.connector.game import GameConnector
 
 
 async def main():
-    cfg.logger.info('Running PyWowChat')
+    glob.logger.info('Running PyWowChat')
     logon_connector = LogonConnector()
     await logon_connector.run()
     del logon_connector

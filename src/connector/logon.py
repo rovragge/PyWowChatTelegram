@@ -15,7 +15,6 @@ class LogonConnector(Connector):
         self.logon_finished = False
 
     async def run(self):
-        host, port = cfg.parse_realm_list()
         await self.out_queue.put(self.get_initial_packet())
         cfg.logger.info(f'Connecting to logon server: {host}')
         try:

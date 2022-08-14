@@ -26,8 +26,6 @@ class PacketHandler:
         self.in_world = False
         self.last_roster_update = None
         self.players = {}
-        self.character = None
-        self.guild = Guild()
         self.messages_awaiting_name_query = {}
 
     def handle_packet(self, packet):
@@ -176,13 +174,14 @@ class PacketHandler:
         if self.received_char_enum:
             return
         self.received_char_enum = True
-        self.character = self.parse_char_enum(data)
-        if not self.character:
-            cfg.logger.error(f'Character {cfg.character} not found')
+        character = self.parse_char_enum(data)
+        if not character:
+            cfg.logger.error(f'Character {cfg.character.name} not found')
             raise ValueError
-        cfg.logger.info(f'Logging in with character {self.character.name}')
+        cfg.character = character
+        cfg.logger.info(f'Logging in with character {cfg.character.name}')
         self.out_queue.put_nowait(
-            Packet(cfg.codes.client_headers.PLAYER_LOGIN, int.to_bytes(self.character.guid, 8, 'little')))
+            Packet(cfg.codes.client_headers.PLAYER_LOGIN, int.to_bytes(cfg.character.guid, 8, 'little')))
 
     def parse_char_enum(self, data):
         n_of_chars = data.get(1)
@@ -192,7 +191,7 @@ class PacketHandler:
             char = Character()
             char.guid = data.get(8, 'little')
             char.name = utils.read_string(data)
-            if char.name.lower() == cfg.character:
+            if char.name.lower() == cfg.character.name:
                 correct_char = char
             char.race = data.get(1)
             char.language = cfg.codes.races.get_language(char.race)
@@ -235,9 +234,9 @@ class PacketHandler:
             return
         self.in_world = True
         cfg.logger.info('Successfully joined the world')
-        if self.character.guild_guid:
+        if cfg.character.guild_guid:
             self.out_queue.put_nowait(
-                Packet(cfg.codes.client_headers.GUILD_QUERY, int.to_bytes(self.character.guild_guid, 4, 'little')))
+                Packet(cfg.codes.client_headers.GUILD_QUERY, int.to_bytes(cfg.character.guild_guid, 4, 'little')))
         return 2
 
     # ---------- Guild Stuff ----------
@@ -247,13 +246,13 @@ class PacketHandler:
             self.out_queue.put_nowait(Packet(cfg.codes.client_headers.GUILD_ROSTER, b''))
 
     def handle_GUILD_ROSTER(self, data):
-        self.guild.roster = self.parse_roster(data)
+        cfg.guild.roster = self.parse_roster(data)
 
     def parse_roster(self, data):
         roster = {}
         n_of_chars = data.get(4, 'little')
-        self.guild.motd = utils.read_string(data)
-        self.guild.info = utils.read_string(data)
+        cfg.guild.motd = utils.read_string(data)
+        cfg.guild.info = utils.read_string(data)
         n_of_ranks = data.get(4, 'little')
         for _ in range(n_of_ranks):
             data.get(4)
@@ -274,12 +273,12 @@ class PacketHandler:
 
     def handle_GUILD_QUERY(self, data):
         data.get(4)
-        self.guild.name = utils.read_string(data)
-        self.guild.ranks = []
+        cfg.guild.name = utils.read_string(data)
+        cfg.guild.ranks = []
         for _ in range(10):
             rank = utils.read_string(data)
             if rank:
-                self.guild.ranks.append(rank)
+                cfg.guild.ranks.append(rank)
 
     def handle_NAME_QUERY(self, data):
         char = self.parse_name_query(data)
@@ -438,7 +437,7 @@ class PacketHandler:
     def send_message_to_wow(self, msg, target=None):
         buff = PyByteBuffer.ByteBuffer.allocate(8192)
         buff.put(msg.channel, 4, 'little')
-        buff.put(self.character['language'], 4, 'little')
+        buff.put(cfg.character['language'], 4, 'little')
         if target:
             buff.put(bytes(target, 'utf-8'))
             buff.put(0)
@@ -466,7 +465,7 @@ class PacketHandler:
     def handle_GROUP_SET_LEADER(self, data):
         new_leader = utils.read_string(data)
         cfg.logger.info(f'{new_leader} is the new leader')
-        if new_leader == self.character.name:
+        if new_leader == cfg.character.name:
             self.out_queue.put_nowait(Packet(cfg.codes.client_headers.GROUP_RAID_CONVERT, b''))
             self.out_queue.put_nowait(Packet(cfg.codes.client_headers.GROUP_DISBAND, b''))
 

@@ -44,8 +44,8 @@ class PacketHandler(Vanilla.PacketHandler):
     def parse_roster(self, data):
         n_of_chars = data.get(4, 'little')
         roster = {}
-        self.guild.motd = utils.read_string(data)
-        self.guild.info = utils.read_string(data)
+        cfg.guild.motd = utils.read_string(data)
+        cfg.guild.info = utils.read_string(data)
         n_of_ranks = data.get(4, 'little')
         for _ in range(n_of_ranks):
             rank_info = data.get(8 + 48, 'little')  # TODO split into rank info and guild bank info

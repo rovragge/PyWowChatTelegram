@@ -77,7 +77,7 @@ class PacketHandler(TBC.PacketHandler):
         if msg.language == -1 or msg.language == 4294967295:  # addon messages and questionable stuff
             return
         msg.guid = data.get(8, 'little')
-        if msg.channel != cfg.codes.chat_channels.SYSTEM and msg.guid == self.character.guid:
+        if msg.channel != cfg.codes.chat_channels.SYSTEM and msg.guid == cfg.character.guid:
             return
         data.get(4)
         if gm:
@@ -92,10 +92,10 @@ class PacketHandler(TBC.PacketHandler):
         return msg
 
     def handle_achievement_event(self, guid, achievement_id):
-        if not self.guild:
+        if not cfg.guild:
             cfg.logger.error('Received achievement event, but not in guild')
             return
-        player = self.guild.roster.get(guid)
+        player = cfg.guild.roster.get(guid)
         if not player:
             cfg.logger.error(f'Received achievement event, but no player with guid {guid} in roster')
             return

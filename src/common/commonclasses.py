@@ -15,7 +15,7 @@ class ChatMessage:
         if self.guid and not self.author:
             return 'NPC speech'
         else:
-            return f'[self.channel] {self.author.name if not self.is_system() else ""}: {self.text}'
+            return f'[{self.channel}] {self.author.name if not self.is_system() else ""}: {self.text}'
 
     def is_system(self):
         return not bool(self.guid)

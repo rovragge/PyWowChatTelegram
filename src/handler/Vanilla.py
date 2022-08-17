@@ -10,7 +10,7 @@ from src.common.config import glob
 import src.common.utils as utils
 from src.common.SRP import SRPHandler
 from src.common.utils import read_string
-from src.common.commonclasses import Packet, ChatMessage, Guild, Character
+from src.common.commonclasses import Packet, ChatMessage, Character
 
 
 class PacketHandler:
@@ -442,23 +442,11 @@ class PacketHandler:
     def handle_INVALIDATE_PLAYER(self, data):
         guid = data.get(8, 'little')
         try:
-            glob.logger.info(f'Info about player {self.players[guid].name} removed')
             del self.players[guid]
         except KeyError:
             glob.logger.debug(f'Can\'t remove info about player guid {guid} - no such guid recorded')
-
-    def send_message_to_wow(self, msg, target=None):
-        buff = PyByteBuffer.ByteBuffer.allocate(8192)
-        buff.put(msg.channel, 4, 'little')
-        buff.put(glob.character['language'], 4, 'little')
-        if target:
-            buff.put(bytes(target, 'utf-8'))
-            buff.put(0)
-        buff.put(bytes(msg.text, 'utf-8'))
-        buff.put(0)
-        buff.strip()
-        buff.rewind()
-        self.out_queue.put_nowait(Packet(glob.codes.client_headers.MESSAGECHAT, buff.array()))
+        else:
+            glob.logger.info(f'Info about player {self.players[guid].name} removed')
 
     def send_notification(self, message):
         self.send_message_to_wow(glob.codes.chat_channels.GUILD, message)
@@ -493,4 +481,5 @@ class PacketHandler:
         target = utils.read_string(data)
         result = data.get(4, 'little')
         lfg_related = data.get(4)
-        glob.logger.info(f'Party operation {operation}{(" on member " + target) if target else ""} resulted in {result}')
+        glob.logger.info(
+            f'Party operation {operation}{(" on member " + target) if target else ""} resulted in {result}')

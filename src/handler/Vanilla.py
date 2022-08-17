@@ -20,8 +20,9 @@ class PacketHandler:
                  b'\xbd\xdc&\xcc\xfe0B\xd6\xe6\xca\x01\xa8\xb8\x90\x80Q\xfc\xb7\xa4Pp\xb8\x12\xf3?&A\xfd\xb57\x90' \
                  b'x19f\x8f'
 
-    def __init__(self, out_queue):
+    def __init__(self, out_queue, discord_queue):
         self.out_queue = out_queue
+        self.discord_queue = discord_queue
         self.received_char_enum = False
         self.in_world = False
         self.last_roster_update = None
@@ -247,6 +248,9 @@ class PacketHandler:
 
     def handle_GUILD_ROSTER(self, data):
         glob.guild.roster = self.parse_roster(data)
+        self.discord_queue.put_nowait(Packet(glob.codes.discord_headers.ACTIVITY_UPDATE,
+                                             len([char for char in glob.guild.roster.values() if
+                                                  not char.last_logoff]) - 1))
 
     def parse_roster(self, data):
         roster = {}
@@ -289,8 +293,8 @@ class PacketHandler:
             return
         for message in messages:
             message.author = char
+            self.discord_queue.put_nowait(Packet(glob.codes.discord_headers.MESSAGE, message))
             glob.logger.info(message)
-            # send messages to discord
         del self.messages_awaiting_name_query[char.guid]
 
     def parse_name_query(self, data):
@@ -315,7 +319,8 @@ class PacketHandler:
         n_of_strings = data.get(1)
         messages = [utils.read_string(data) for _ in range(n_of_strings)]
         msg = self.generate_guild_event_message(event, messages)
-        self.discord_queue.put_nowait(Packet(glob.codes.discord_headers.GUILD_EVENT, msg))
+        if msg:
+            self.discord_queue.put_nowait(Packet(glob.codes.discord_headers.GUILD_EVENT, msg))
         self.update_roster()
 
     @staticmethod
@@ -362,7 +367,10 @@ class PacketHandler:
             return
         if glob.maps.get(message.channel):
             if message.channel == glob.codes.chat_channels.SYSTEM:
-                # send message straight away
+                if message.text.startswith('|c'):
+                    message.text = message.text[10:]
+                message.text = message.text.replace('|r', '')
+                self.discord_queue.put_nowait(Packet(glob.codes.discord_headers.MESSAGE, message))
                 glob.logger.info(message)
                 return
             author = self.players.get(message.guid)
@@ -375,6 +383,7 @@ class PacketHandler:
             else:
                 # send message straight away
                 message.author = author
+                self.discord_queue.put_nowait(Packet(glob.codes.discord_headers.MESSAGE, message))
                 glob.logger.info(message)
 
     def parse_chat_message(self, data, gm):

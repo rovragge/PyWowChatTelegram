@@ -1,13 +1,20 @@
 import asyncio
 import random
+import socket
 
 from src.common.config import glob
 from src.common.commonclasses import Packet
 from src.connector.base import Connector
-import socket
+from discord_bot import DiscordBot
+
+import discord
 
 
 class GameConnector(Connector):
+
+    def __init__(self, *args, **kwargs):
+        self.discord_bot = None
+        super().__init__(*args, **kwargs)
 
     async def run(self):
         glob.logger.info(f'Connecting to game server: {glob.realm["name"]}')
@@ -16,7 +23,8 @@ class GameConnector(Connector):
         except socket.gaierror:
             glob.logger.critical('Can\'t establish  connection')
             return
-        self.main_task = asyncio.gather(self.receiver_coroutine(), self.sender_coroutine(), self.handler_coroutine())
+        self.main_task = asyncio.gather(self.receiver_coroutine(), self.sender_coroutine(), self.handler_coroutine(),
+                                        self.discord_receiver_coroutine(), self.discord_writer_coroutine())
         try:
             await self.main_task
         except asyncio.exceptions.CancelledError:
@@ -33,6 +41,25 @@ class GameConnector(Connector):
                 asyncio.create_task(self.roster_update_coroutine(61, 61), name='roster_update')
                 if glob.connection_info.expansion != 'Vanilla':
                     asyncio.create_task(self.keep_alive_coroutine(15, 30), name='keep_alive')
+
+    async def discord_receiver_coroutine(self):
+        self.discord_bot = DiscordBot('.', out_queue=self.out_queue, status=discord.Status.online)
+        await self.discord_bot.start(glob.token)
+
+    async def discord_writer_coroutine(self):
+        while not self.writer.is_closing() and not self.discord_bot.is_closed():
+            if not self.discord_bot.is_ready():
+                await asyncio.sleep(1)
+                continue
+            try:
+                packet = await self.discord_queue.get()
+            except asyncio.exceptions.CancelledError:
+                break
+            else:
+                if not isinstance(packet, Packet):
+                    glob.logger.error('Something other than packet in discord queue!')
+                    continue
+                self.discord_bot.handle_packet(packet)
 
     async def ping_coroutine(self, initial_delay, delay):
         glob.logger.debug('Ping coroutine alive')

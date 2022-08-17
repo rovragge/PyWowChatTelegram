@@ -7,8 +7,8 @@ from src.common.commonclasses import Packet, ChatMessage, Character
 
 
 class PacketHandler(Vanilla.PacketHandler):
-    def __init__(self, out_queue):
-        super().__init__(out_queue)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.connect_time = time.time_ns()
 
     ADDON_INFO = b'\xd0\x01\x00\x00x\x9cu\xcf;\x0e\xc20\x0c\x80\xe1r\x0f.C\x18P\xa5f\xa1eF&q+\xab\x89S\x19\x87GO\x0f' \

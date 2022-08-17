@@ -374,9 +374,10 @@ class ServerHeaders(CodeCollection):
     LEARNED_DANCE_MOVES = 0x455
 
 
-class DiscordHeaders:
-    MESSAGE = 0x00
-    ACTIVITY_UPDATE = 0x01
+class DiscordHeaders(CodeCollection):
+    MESSAGE = 0x000
+    ACTIVITY_UPDATE = 0x001
+    GUILD_EVENT = 0x002
 
 
 class Codes:

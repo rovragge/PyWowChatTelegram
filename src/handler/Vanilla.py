@@ -242,7 +242,7 @@ class PacketHandler:
 
     # ---------- Guild Stuff ----------
     def update_roster(self):
-        if not self.last_roster_update or time.time() - self.last_roster_update > 60:
+        if not self.last_roster_update or time.time() - self.last_roster_update > 10:
             self.last_roster_update = time.time()
             self.out_queue.put_nowait(Packet(glob.codes.client_headers.GUILD_ROSTER, b''))
 

@@ -334,7 +334,7 @@ class PacketHandler:
         if glob.guild_events[event] is False:
             glob.logger.info(f'Guild event disabled')
             return
-        if event != glob.codes.guild_events.MOTD and glob.character.lower() == messages[0].lower():
+        if event != glob.codes.guild_events.MOTD and glob.character.name.lower() == messages[0].lower():
             return
         match event:
             case glob.codes.guild_events.SIGNED_ON:

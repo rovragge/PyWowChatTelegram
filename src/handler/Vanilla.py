@@ -328,8 +328,11 @@ class PacketHandler:
         if event not in glob.guild_events:
             glob.logger.error(f'No such guild event {event}')
             return
-        if not list(filter(bool, messages)) and event != glob.codes.guild_events.MOTD:
-            glob.logger.error('Empty guild event message')
+        if not list(filter(bool, messages)):
+            if event == glob.codes.guild_events.MOTD:
+                glob.logger.debug('Empty guild MOTD skipped')
+            else:
+                glob.logger.error('Empty guild event message')
             return
         if glob.guild_events[event] is False:
             glob.logger.info(f'Guild event disabled')

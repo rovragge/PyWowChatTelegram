@@ -1,0 +1,49 @@
+<config>
+    <logger>
+        <name>LOGGER</name>
+        <level>DEBUG</level>
+        <to_file>1</to_file>
+        <to_stdout>1</to_stdout>
+        <format>%(levelname)s: %(message)s</format>
+    </logger>
+    <discord>
+        <token></token>
+        <enable_dot_commands>1</enable_dot_commands>
+        <dot_commands_whitelist>
+            <dot_command>server_info</dot_command>
+            <dot_command>lookup *</dot_command>
+        </dot_commands_whitelist>
+        <enable_commands_channels>0</enable_commands_channels>
+        <enable_tag_failed_notifications>1</enable_tag_failed_notifications>
+        <channels>
+            <say>say-channel</say>
+            <guild>guild-chat</guild>
+            <whisper>whisper-channel</whisper>
+            <system>system-channel</system>
+            <officer></officer>
+            <yell></yell>
+        </channels>
+    </discord>
+    <wow>
+        <platform>Win</platform>
+        <locale>enUS</locale>
+        <server_motd_enabled>1</server_motd_enabled>
+        <version>3.3.5</version>
+        <realmlist>logon.wowcircle.me</realmlist>
+        <realm>Wow Circle 3.3.5a x1</realm>
+        <account></account>
+        <password></password>
+        <character></character>
+    </wow>
+    <guild_events>
+        <signed_on>1</signed_on>
+        <signed_off>1</signed_off>
+        <promoted>1</promoted>
+        <demoted>1</demoted>
+        <joined>1</joined>
+        <left>1</left>
+        <removed>1</removed>
+        <motd>1</motd>
+    </guild_events>
+    <achievements>1</achievements>
+</config>

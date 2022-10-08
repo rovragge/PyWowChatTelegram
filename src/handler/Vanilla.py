@@ -449,7 +449,7 @@ class PacketHandler:
             glob.logger.info(f'Info about player {self.players[guid].name} removed')
 
     def send_notification(self, message):
-        self.send_message_to_wow(glob.codes.chat_channels.GUILD, message)
+        pass
 
     # ---------- Group ----------
     def handle_GROUP_INVITE(self, data):

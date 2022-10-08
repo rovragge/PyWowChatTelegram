@@ -235,6 +235,7 @@ class PacketHandler:
             return
         self.in_world = True
         glob.logger.info('Successfully joined the world')
+        self.out_queue.put_nowait(Packet(glob.codes.client_headers.CALENDAR_GET_CALENDAR, b''))
         if glob.character.guild_guid:
             self.out_queue.put_nowait(
                 Packet(glob.codes.client_headers.GUILD_QUERY, int.to_bytes(glob.character.guild_guid, 4, 'little')))

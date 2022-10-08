@@ -7,7 +7,7 @@ import src.common.utils as utils
 
 from src.common.config import glob
 from src.handler import TBC
-from src.common.commonclasses import ChatMessage, Character
+from src.common.commonclasses import ChatMessage, Character, CalendarInvite, CalendarEvent, Holiday, Packet
 
 
 class PacketHandler(TBC.PacketHandler):
@@ -100,6 +100,101 @@ class PacketHandler(TBC.PacketHandler):
             glob.logger.error(f'Received achievement event, but no player with guid {guid} in roster')
             return
         # TODO send discord notification (player.name, achievement_id)
+
+    def handle_CALENDAR_SEND_CALENDAR(self, data):
+        for _ in range(data.get(4, 'little')):
+            data.get(19)  # event_id(8) + invite_id(8) + status(1) + rank(1) + is_guild_event(1)
+            self.unpack_guid(data)  # creator_guid
+        for _ in range(data.get(4, 'little')):
+            event_id = data.get(8, 'little')
+            utils.read_string(data)  # title
+            data.get(16)  # type(4) + time(4) + flags(4) + dungeon_id(4)
+            self.unpack_guid(data)  # creator_guid
+            self.out_queue.put_nowait(
+                Packet(glob.codes.client_headers.CALENDAR_GET_EVENT, int.to_bytes(event_id, 8, 'little')))
+        glob.calendar.time = data.get(4, 'little')
+        data.get(4)
+        for _ in range(data.get(4, 'little')):
+            data.get(20)  # map_id(4) + .difficulty(4) + reset_time(4) + instance_id(8)
+        data.get(4, 'little')  # 1135753200 Constant date, unk (28.12.2005 07:00)
+        for _ in range(data.get(4, 'little')):
+            data.get(12)  # map_id(4) + reset_time(4) + zero(4)
+        for _ in range(data.get(4, 'little')):
+            holiday = Holiday()
+            holiday.id = data.get(4, 'little')
+            holiday.region = data.get(4, 'little')
+            holiday.looping = data.get(4, 'little')
+            holiday.priority = data.get(4, 'little')
+            holiday.filter_type = data.get(4, 'little')
+            holiday.dates = [data.get(4, 'little') for _ in range(Holiday.MAX_HOLIDAY_DATES)]
+            holiday.durations = [data.get(4, 'little') for _ in range(Holiday.MAX_HOLIDAY_DURATIONS)]
+            holiday.flags = [data.get(4, 'little') for _ in range(Holiday.MAX_HOLIDAY_FLAGS)]
+            holiday.texture_name = utils.read_string(data)
+            glob.calendar.holidays.append(holiday)
+        glob.logger.debug(f'Received calendar')
+
+    def handle_CALENDAR_EVENT_REMOVED_ALERT(self, data):
+        data.get(1)
+        event_id = data.get(8, 'little')
+        data.get(4, 'little')  # time
+        if event_id not in glob.calendar.events:
+            glob.logger.error(f'Received  removal alert for {event_id} calendar event, but no such event recorded')
+            return
+        del glob.calendar.events[event_id]
+        glob.logger.debug(f'Removed calendar event {event_id}')
+
+    def handle_CALENDAR_EVENT_UPDATED_ALERT(self, data):
+        glob.logger.debug('CALENDAR_EVENT_UPDATED_ALERT')
+        data.get(1)
+        event_id = data.get(8, 'little')
+        event = glob.calendar.events.get(event_id)
+        if not event:
+            glob.logger.error(f'Received update for {event_id}, but no such event recorded')
+            return
+        data.get(4, 'little')  # old_time
+        event.flags = data.get(4, 'little')
+        event.time = data.get(4, 'little')
+        event.type = data.get(1)
+        event.dungeon_id = data.get(4, 'little')
+        event.title = utils.read_string(data)
+        event.text = utils.read_string(data)
+        data.get(9)  # is_repeatable + CALENDAR_MAX_INVITES + unk_time
+
+    def handle_CALENDAR_EVENT_INVITE(self):
+        glob.logger.error('CALENDAR_EVENT_INVITE - not handled')
+
+    def handle_CALENDAR_EVENT_INVITE_ALERT(self, data):
+        event_id = data.get(8, 'little')
+        self.out_queue.put_nowait(
+            Packet(glob.codes.client_headers.CALENDAR_GET_EVENT, int.to_bytes(event_id, 8, 'little')))
+
+    def handle_CALENDAR_SEND_EVENT(self, data):
+        data.get(1)  # send type
+        event = CalendarEvent()
+        event.creator_guid = self.unpack_guid(data)
+        event.id = data.get(8, 'little')
+        event.title = utils.read_string(data)
+        event.text = utils.read_string(data)
+        event.type = data.get(1)
+        data.get(1)  # is_repeatable
+        data.get(4, 'little')  # CALENDAR_MAX_INVITES
+        event.dungeon_id = data.get(4, 'little')
+        event.flags = data.get(4, 'little')
+        event.time = data.get(4, 'little')
+        data.get(4, 'little')  # unk_time
+        event.guild_id = data.get(4, 'little')
+        for _ in range(data.get(4, 'little')):
+            invite = CalendarInvite()
+            invite.event_id = event.id
+            invite.guid = self.unpack_guid(data)
+            invite.level = data.get(1)
+            invite.status = data.get(1)
+            invite.rank = data.get(1)
+            data.get(9)  # is_guild_event + 1st item in invite map
+            invite.last_update_time = data.get(4, 'little')
+            utils.read_string(data)  # text
+            event.invites.append(invite)
+        glob.calendar.events[event.id] = event
 
     @staticmethod
     def unpack_guid(data):

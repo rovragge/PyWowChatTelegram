@@ -120,3 +120,76 @@ class ConnectionInfo:
         if not expansion:
             raise ValueError
         return expansion
+
+
+class Calendar:
+
+    def __init__(self):
+        self.invites = {}
+        self.events = {}
+        self.persistence_states = {}
+        self.resets = {}
+        self.holidays = []
+
+    def dump(self):
+        self.__init__()
+
+
+class CalendarInvite:
+    def __init__(self):
+        self.guid = None
+        self.event_id = None
+        self.level = None
+        self.status = None
+        self.rank = None
+        self.last_update_time = None
+
+    def __str__(self):
+        return f'CalendarInvite:\n\t{self.guid = }\n\t{self.event_id = }\n\t{self.level = }\n\t{self.status = }\
+\n\t{self.rank = }\n\t{self.last_update_time = }'
+
+
+class CalendarEvent:
+
+    def __init__(self):
+        self.id = None
+        self.title = None
+        self.text = None
+        self.type = None
+        self.time = None
+        self.flags = None
+        self.dungeon_id = None
+        self.creator_guid = None
+        self.invites = []
+
+    def is_guild_event(self):
+        return self.flags == 1024  # TODO needs testing
+
+    def __str__(self):
+        return f'CalendarEvent:\n\t{self.id = }\n\t{self.title = }\n\t{self.time = }\n\t{self.flags = }\n\t\
+{self.dungeon_id = }\n\t{self.creator_guid = }\n\t{self.text = }\n\t{self.type = }\n\tinvites: {len(self.invites)}'
+
+
+class DungeonPersistentState:
+    def __init__(self):
+        self.map_id = None
+        self.difficulty = None
+        self.reset_time = None
+        self.instance_id = None
+
+
+class Holiday:
+    MAX_HOLIDAY_DATES = 26
+    MAX_HOLIDAY_DURATIONS = 10
+    MAX_HOLIDAY_FLAGS = 10
+
+    def __init(self):
+        self.id = None
+        self.region = None
+        self.looping = None
+        self.priority = None
+        self.filter_type = None
+        self.dates = []
+        self.durations = []
+        self.flags = []
+        self.texture_name = None

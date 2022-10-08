@@ -3,7 +3,7 @@ import os
 import datetime
 import sys
 
-from src.common.commonclasses import Character, Guild, ConnectionInfo
+from src.common.commonclasses import Character, Guild, ConnectionInfo, Calendar
 
 import lxml.objectify
 from importlib import import_module
@@ -18,6 +18,7 @@ class Globals:
         self.connection_info = ConnectionInfo()
         self.character = Character()
         self.guild = Guild()
+        self.calendar = Calendar()
         self.logger = self.setup_log(xml_obj.logger)
 
         self.connection_info.account = str(xml_obj.wow.account).upper()

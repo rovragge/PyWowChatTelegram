@@ -287,7 +287,7 @@ class PacketHandler:
     def handle_NAME_QUERY(self, data):
         char = self.parse_name_query(data)
         self.players[char.guid] = char
-        glob.logger.info(f'Updated info about player {char.name}')
+        glob.logger.info(f'Updated info about player {char.name} {char.guid}')
         messages = self.messages_awaiting_name_query.get(char.guid)
         if not messages:
             return

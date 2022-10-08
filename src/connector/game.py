@@ -62,7 +62,7 @@ class GameConnector(Connector):
                 self.discord_bot.handle_packet(packet)
 
     async def ping_coroutine(self, initial_delay, delay):
-        glob.logger.debug('Ping coroutine alive')
+        # glob.logger.debug('Ping coroutine alive')
         ping_id = 1
         latency = random.randint(0, 50) + 50
         data = int.to_bytes(ping_id, 4, 'little') + int.to_bytes(latency, 4, 'little')
@@ -82,7 +82,7 @@ class GameConnector(Connector):
             ping_id += 1
 
     async def keep_alive_coroutine(self, initial_delay, delay):
-        glob.logger.debug('Keep alive coroutine alive')
+        # glob.logger.debug('Keep alive coroutine alive')
         try:
             await asyncio.sleep(initial_delay)
         except asyncio.exceptions.CancelledError:
@@ -97,7 +97,7 @@ class GameConnector(Connector):
                 break
 
     async def roster_update_coroutine(self, initial_delay, delay):
-        glob.logger.debug('Roster update coroutine alive')
+        # glob.logger.debug('Roster update coroutine alive')
         try:
             await asyncio.sleep(initial_delay)
         except asyncio.exceptions.CancelledError:

@@ -2,3 +2,4 @@ PyByteBuffer
 Arc4
 discord.py
 python-dotenv
+lxml

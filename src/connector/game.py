@@ -43,7 +43,8 @@ class GameConnector(Connector):
                     asyncio.create_task(self.keep_alive_coroutine(15, 30), name='keep_alive')
 
     async def discord_receiver_coroutine(self):
-        self.discord_bot = DiscordBot('.', out_queue=self.out_queue, status=discord.Status.online)
+        needed_intents = discord.Intents.default()
+        self.discord_bot = DiscordBot('.', out_queue=self.out_queue, status=discord.Status.online, intents=needed_intents)
         await self.discord_bot.start(glob.token)
 
     async def discord_writer_coroutine(self):

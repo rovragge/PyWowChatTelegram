@@ -144,6 +144,19 @@ class CalendarInvite:
         self.rank = None
         self.last_update_time = None
 
+    def get_status_emoji(self):
+        status_map = {0: '❓',
+                      1: '✅',
+                      2: '🚫',
+                      3: '✅',
+                      4: '🚫',
+                      5: '❓',
+                      6: '✅',
+                      7: '❓',
+                      8: '❓',
+                      9: '🚫'}
+        return status_map.get(self.status)
+
     def __str__(self):
         return f'CalendarInvite:\n\t{self.guid = }\n\t{self.event_id = }\n\t{self.level = }\n\t{self.status = }\
 \n\t{self.rank = }\n\t{self.last_update_time = }'
@@ -161,6 +174,7 @@ class CalendarEvent:
         self.dungeon_id = None
         self.creator_guid = None
         self.invites = []
+        self.embeds = []
 
     def is_guild_event(self):
         return self.flags == 1024  # TODO needs testing

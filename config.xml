@@ -2,7 +2,7 @@
     <logger>
         <name>LOGGER</name>
         <level>DEBUG</level>
-        <to_file>1</to_file>
+        <to_file>0</to_file>
         <to_stdout>1</to_stdout>
         <format>%(levelname)s: %(message)s</format>
     </logger>
@@ -22,6 +22,7 @@
             <system>system-channel</system>
             <officer></officer>
             <yell></yell>
+            <announcement>rt-channel</announcement>
         </channels>
     </discord>
     <wow>

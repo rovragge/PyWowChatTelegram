@@ -2,6 +2,7 @@ import logging
 import os
 import datetime
 import sys
+import dotenv
 
 from src.common.commonclasses import Character, Guild, ConnectionInfo, Calendar
 
@@ -12,40 +13,46 @@ from importlib import import_module
 class Globals:
 
     def __init__(self):
+
+        dotenv.load_dotenv('../params.env')
+
         with open(os.path.join(os.path.dirname(sys.argv[0]), 'config.xml'), 'r', encoding='utf-8') as xml_file:
             xml_obj = lxml.objectify.fromstring(xml_file.read())
 
         self.connection_info = ConnectionInfo()
         self.character = Character()
         self.guild = Guild()
+        self.players = {}
         self.calendar = Calendar()
-        self.logger = self.setup_log(xml_obj.logger)
+        self.realm = None
 
-        self.connection_info.account = str(xml_obj.wow.account).upper()
-        self.connection_info.password = str(xml_obj.wow.password).upper()
+        self.logger = self.setup_log(xml_obj.logger)
+        self.timezone = datetime.timezone(datetime.timedelta(hours=3), 'Moscow')
+
+        self.connection_info.account = os.environ.get('WOW_ACC').upper()
+        self.connection_info.password = os.environ.get('WOW_PASS').upper()
+        self.connection_info.realm_name = os.environ.get('WOW_REALM')
+        self.character.name = os.environ.get('WOW_CHAR')
+        self.token = os.environ.get('DISCORD_TOKEN')
         self.connection_info.version = str(xml_obj.wow.version)
         self.connection_info.platform = str(xml_obj.wow.platform)
         self.connection_info.locale = str(xml_obj.wow.locale)
-        self.connection_info.realm_name = str(xml_obj.wow.realm)
-        self.connection_info.host, self.connection_info.port = self.parse_realm_list(str(xml_obj.wow.realmlist))
+        self.connection_info.host, self.connection_info.port = self.parse_realm_list(os.environ.get('WOW_LOGON'))
         self.connection_info.build = self.connection_info.get_build()
         self.connection_info.expansion = self.connection_info.get_expansion()
-
-        self.character.name = str(xml_obj.wow.character).lower()
-
         self.server_MOTD_enabled = bool(xml_obj.wow.server_motd_enabled)
-        self.realm = None
+
         self.codes = getattr(import_module(f'src.codes.{self.connection_info.expansion}'), 'Codes')
         self.crypt = getattr(import_module(f'src.header_crypt.{self.connection_info.expansion}'), 'GameHeaderCrypt')()
-        self.token = str(xml_obj.discord.token)
+
         self.maps = {self.codes.chat_channels.get_from_str(x.tag.upper()): x for x in
                      xml_obj.discord.channels.getchildren()}
         self.guild_events = {self.codes.guild_events.get_from_str(e.tag.upper()): bool(e) for e in
                              xml_obj.guild_events.getchildren()}
 
         self.logger.debug('Config values:\n\t'
-                          # f'account = {self.account}\n\t'
-                          # f'password = {self.password}\n\t'
+                          f'account = {self.connection_info.account}\n\t'
+                          f'password = {self.connection_info.password}\n\t'
                           f'platform = {self.connection_info.platform}\n\t'
                           f'locale = {self.connection_info.locale}\n\t'
                           f'expansion = {self.connection_info.expansion}\n\t'

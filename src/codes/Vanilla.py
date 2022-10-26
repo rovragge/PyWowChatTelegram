@@ -94,7 +94,6 @@ class CharClasses(CodeCollection):
     SHAMAN = 0x07
     MAGE = 0x08
     WARLOCK = 0x09
-    MONK = 0x0A
     DRUID = 0x0B
 
 
@@ -412,6 +411,7 @@ class DiscordHeaders(CodeCollection):
     MESSAGE = 0x000
     ACTIVITY_UPDATE = 0x001
     GUILD_EVENT = 0x002
+    CALENDAR_EVENT_CREATION = 0x003
 
 
 class Codes:

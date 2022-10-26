@@ -11,22 +11,22 @@ class ClientHeaders(Vanilla.ClientHeaders):
 
 
 class ChatChannels(Vanilla.ChatChannels):
+    SYSTEM = 0x00
     SAY = 0x01
     GUILD = 0x04
     OFFICER = 0x05
     YELL = 0x06
     WHISPER = 0x07
-    EMOTE = 0x0A
     TEXT_EMOTE = 0x0B
     CHANNEL = 0x11
-    SYSTEM = 0x00
     CHANNEL_JOIN = 0x12
     CHANNEL_LEAVE = 0x13
     CHANNEL_LIST = 0x14
     CHANNEL_NOTICE = 0x15
     CHANNEL_NOTICE_USER = 0x16
     GUILD_RECRUITMENT = 0x19
-
+    EMOTE = 0x0A
+    ANNOUNCEMENT = 0xFF
 
 class Codes(Vanilla.Codes):
     client_headers = ClientHeaders

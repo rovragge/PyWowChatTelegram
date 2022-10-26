@@ -169,7 +169,7 @@ class PacketHandler:
             return
 
     def handle_WARDEN_DATA(self, data):
-        glob.logger.debug('Handling Warden data')
+        return
 
     def handle_CHAR_ENUM(self, data):
         if self.received_char_enum:

@@ -1,5 +1,6 @@
 import secrets
 import hashlib
+import datetime
 
 import PyByteBuffer
 
@@ -131,12 +132,11 @@ class PacketHandler(TBC.PacketHandler):
             holiday.flags = [data.get(4, 'little') for _ in range(Holiday.MAX_HOLIDAY_FLAGS)]
             holiday.texture_name = utils.read_string(data)
             glob.calendar.holidays.append(holiday)
-        glob.logger.debug(f'Received calendar')
 
     def handle_CALENDAR_EVENT_REMOVED_ALERT(self, data):
         data.get(1)
         event_id = data.get(8, 'little')
-        data.get(4, 'little')  # time
+        self.unpack_time(data)  # time
         if event_id not in glob.calendar.events:
             glob.logger.error(f'Received  removal alert for {event_id} calendar event, but no such event recorded')
             return
@@ -153,7 +153,7 @@ class PacketHandler(TBC.PacketHandler):
             return
         data.get(4, 'little')  # old_time
         event.flags = data.get(4, 'little')
-        event.time = data.get(4, 'little')
+        event.time = self.unpack_guid(data)
         event.type = data.get(1)
         event.dungeon_id = data.get(4, 'little')
         event.title = utils.read_string(data)
@@ -180,21 +180,23 @@ class PacketHandler(TBC.PacketHandler):
         data.get(4, 'little')  # CALENDAR_MAX_INVITES
         event.dungeon_id = data.get(4, 'little')
         event.flags = data.get(4, 'little')
-        event.time = data.get(4, 'little')
+        event.time = self.unpack_time(data)
         data.get(4, 'little')  # unk_time
         event.guild_id = data.get(4, 'little')
         for _ in range(data.get(4, 'little')):
             invite = CalendarInvite()
             invite.event_id = event.id
             invite.guid = self.unpack_guid(data)
-            invite.level = data.get(1)
+            self.send_NAME_QUERY(invite.guid)
+            data.get(1)  # level
             invite.status = data.get(1)
             invite.rank = data.get(1)
             data.get(9)  # is_guild_event + 1st item in invite map
-            invite.last_update_time = data.get(4, 'little')
-            utils.read_string(data)  # text
+            data.get(4, 'little')  # last_update_time - has len=14?
+            utils.read_string(data)
             event.invites.append(invite)
         glob.calendar.events[event.id] = event
+        self.discord_queue.put_nowait(Packet(glob.codes.discord_headers.CALENDAR_EVENT_CREATION, event))
 
     @staticmethod
     def unpack_guid(data):
@@ -207,3 +209,13 @@ class PacketHandler(TBC.PacketHandler):
             else:
                 result = result
         return result
+
+    @staticmethod
+    def unpack_time(data):
+        bin_time = bin(data.get(4, 'little'))[2:]
+        return datetime.datetime(year=2000 + int(bin_time[:5], 2),
+                                 month=1 + int(bin_time[5:9], 2),
+                                 day=1 + int(bin_time[9:15], 2),
+                                 hour=int(bin_time[18:23], 2),
+                                 minute=int(bin_time[23:], 2),
+                                 tzinfo=glob.timezone)

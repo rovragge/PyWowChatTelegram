@@ -26,8 +26,8 @@ class PacketHandler:
         self.received_char_enum = False
         self.in_world = False
         self.last_roster_update = None
-        self.players = {}
-        self.messages_awaiting_name_query = {}
+        self.pending_players = set()
+        self.pending_messages = {}
 
     def handle_packet(self, packet):
         header = glob.codes.server_headers.get_str(packet.id)
@@ -287,16 +287,17 @@ class PacketHandler:
 
     def handle_NAME_QUERY(self, data):
         char = self.parse_name_query(data)
-        self.players[char.guid] = char
+        glob.players[char.guid] = char
         glob.logger.info(f'Updated info about player {char.name} {char.guid}')
-        messages = self.messages_awaiting_name_query.get(char.guid)
+        self.pending_players.remove(char.guid)
+        messages = self.pending_messages.get(char.guid)
         if not messages:
             return
         for message in messages:
             message.author = char
             self.discord_queue.put_nowait(Packet(glob.codes.discord_headers.MESSAGE, message))
             glob.logger.info(message)
-        del self.messages_awaiting_name_query[char.guid]
+        del self.pending_messages[char.guid]
 
     def parse_name_query(self, data):
         char = Character()
@@ -309,6 +310,9 @@ class PacketHandler:
         return char
 
     def send_NAME_QUERY(self, guid):
+        if guid in self.pending_players:
+            return
+        self.pending_players.add(guid)
         data = PyByteBuffer.ByteBuffer.allocate(8)
         data.put(guid, 8, endianness='little')
         data.rewind()
@@ -377,12 +381,12 @@ class PacketHandler:
                 self.discord_queue.put_nowait(Packet(glob.codes.discord_headers.MESSAGE, message))
                 glob.logger.info(message)
                 return
-            author = self.players.get(message.guid)
+            author = glob.players.get(message.guid)
             if not author:
-                if author in self.messages_awaiting_name_query:
-                    self.messages_awaiting_name_query[message.guid].append(message)
+                if author in self.pending_messages:
+                    self.pending_messages[message.guid].append(message)
                 else:
-                    self.messages_awaiting_name_query[message.guid] = [message]
+                    self.pending_messages[message.guid] = [message]
                     self.send_NAME_QUERY(message.guid)
             else:
                 # send message straight away
@@ -443,11 +447,11 @@ class PacketHandler:
     def handle_INVALIDATE_PLAYER(self, data):
         guid = data.get(8, 'little')
         try:
-            del self.players[guid]
+            del glob.players[guid]
         except KeyError:
             glob.logger.debug(f'Can\'t remove info about player guid {guid} - no such guid recorded')
         else:
-            glob.logger.info(f'Info about player {self.players[guid].name} removed')
+            glob.logger.info(f'Info about player {glob.players[guid].name} removed')
 
     def send_notification(self, message):
         pass

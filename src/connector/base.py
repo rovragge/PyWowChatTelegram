@@ -4,6 +4,7 @@ from importlib import import_module
 import PyByteBuffer
 
 from src.common.config import glob
+from src.encoder import PacketEncoder
 
 
 class Connector:
@@ -18,7 +19,7 @@ class Connector:
         self.discord_queue = asyncio.Queue()
 
         self.decoder = getattr(import_module(f'src.decoder.{glob.connection_info.expansion}'), 'PacketDecoder')()
-        self.encoder = getattr(import_module(f'src.encoder.{glob.connection_info.expansion}'), 'PacketEncoder')()
+        self.encoder = PacketEncoder()
         self.handler = getattr(import_module(f'src.handler.{glob.connection_info.expansion}'), 'PacketHandler')(
             self.out_queue,
             self.discord_queue)

@@ -7,7 +7,6 @@
         <format>%(levelname)s: %(message)s</format>
     </logger>
     <discord>
-        <token></token>
         <enable_dot_commands>1</enable_dot_commands>
         <dot_commands_whitelist>
             <dot_command>server_info</dot_command>
@@ -30,11 +29,6 @@
         <locale>enUS</locale>
         <server_motd_enabled>1</server_motd_enabled>
         <version>3.3.5</version>
-        <realmlist>logon.wowcircle.me</realmlist>
-        <realm>Wow Circle 3.3.5a x1</realm>
-        <account></account>
-        <password></password>
-        <character></character>
     </wow>
     <guild_events>
         <signed_on>1</signed_on>

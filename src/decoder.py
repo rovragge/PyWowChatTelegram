@@ -61,8 +61,7 @@ class PacketDecoder:
             self.incomplete_packet = True
             self.remaining_data = buff.array()
             return
-        packet = Packet(
-            *self.decompress(self.packet_id, buff.array(self.packet_size) if self.packet_size else bytearray(1)))
+        packet = Packet(self.packet_id, buff.array(self.packet_size) if self.packet_size else bytearray(1))
         self.incomplete_packet = bool(buff.remaining)
         self.remaining_data = None
         self.packet_size = None
@@ -70,14 +69,17 @@ class PacketDecoder:
         return packet
 
     def parse_encrypted_header(self, buff):
-        header = buff.get(PacketDecoder.HEADER_LENGTH)
+        header = int.to_bytes(buff.get(PacketDecoder.HEADER_LENGTH), PacketDecoder.HEADER_LENGTH, 'big')
         decrypted = glob.crypt.decrypt(header)
-        size = ((decrypted[0] & 0xFF) << 8 | decrypted[1] & 0xFF) - 2
-        packet_id = (decrypted[3] & 0xFF) << 8 | decrypted[2] & 0xFF
-        return size, packet_id
 
-    def decompress(self, packet_id, data):
-        return packet_id, data  # added in cata
+        if decrypted[0] & 128 == 128:
+            next_byte = glob.crypt.decrypt(int.to_bytes(buff.get(1), 1, 'big'))[0]
+            size = (((decrypted[0] & 127) << 16) | ((decrypted[1] & 255) << 8) | (decrypted[2] & 255)) - 2
+            packet_id = (next_byte & 255) << 8 | decrypted[3] & 255
+        else:
+            size = ((decrypted[0] & 255) << 8 | decrypted[1] & 255) - 2
+            packet_id = (decrypted[3] & 255) << 8 | decrypted[2] & 255
+        return packet_id, size
 
     @staticmethod
     def parse_header(buff):

@@ -5,7 +5,7 @@ import PyByteBuffer
 
 from src.common.config import glob
 from src.encoder import PacketEncoder
-
+from src.decoder import PacketDecoder
 
 class Connector:
     RECV_SIZE = 8192
@@ -18,7 +18,7 @@ class Connector:
         self.out_queue = asyncio.Queue()
         self.discord_queue = asyncio.Queue()
 
-        self.decoder = getattr(import_module(f'src.decoder.{glob.connection_info.expansion}'), 'PacketDecoder')()
+        self.decoder = PacketDecoder()
         self.encoder = PacketEncoder()
         self.handler = getattr(import_module(f'src.handler.{glob.connection_info.expansion}'), 'PacketHandler')(
             self.out_queue,

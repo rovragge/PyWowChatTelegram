@@ -18,13 +18,13 @@ class LogonPacketHandler(PacketHandler):
             glob.logger.error(glob.codes.logon_auth_results.get_str(result))
             raise ValueError
 
-        B = int.from_bytes(data.array(32), 'little')
+        B = data.get(32, 'little')
         g_length = data.get(1)
-        g = int.from_bytes(data.array(g_length), 'little')
+        g = data.get(g_length, 'little')
         n_length = data.get(1)
-        N = int.from_bytes(data.array(n_length), 'little')
-        salt = int.from_bytes(data.array(32), 'little')
-        data.array(16)
+        N = data.get(n_length, 'little')
+        salt = data.get(32, 'little')
+        data.get(16)
         security_flag = data.get(1)
 
         self.srp_handler = SRPHandler(B, g, N, salt, security_flag)

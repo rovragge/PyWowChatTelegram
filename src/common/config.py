@@ -5,6 +5,7 @@ import sys
 import dotenv
 
 from src.common.commonclasses import Character, Guild, ConnectionInfo, Calendar
+from src.header_crypt import GameHeaderCrypt
 
 import lxml.objectify
 from importlib import import_module
@@ -43,7 +44,7 @@ class Globals:
         self.server_MOTD_enabled = bool(xml_obj.wow.server_motd_enabled)
 
         self.codes = getattr(import_module(f'src.codes.{self.connection_info.expansion}'), 'Codes')
-        self.crypt = getattr(import_module(f'src.header_crypt.{self.connection_info.expansion}'), 'GameHeaderCrypt')()
+        self.crypt = GameHeaderCrypt()
 
         self.maps = {self.codes.chat_channels.get_from_str(x.tag.upper()): x for x in
                      xml_obj.discord.channels.getchildren()}

@@ -7,10 +7,12 @@ from src.connector.game import GameConnector
 
 async def main():
     glob.logger.info('Running PyWowChat')
-    logon_connector = LogonConnector()
+    in_queue = asyncio.Queue()
+    out_queue = asyncio.Queue()
+    discord_queue = asyncio.Queue()
+    logon_connector = LogonConnector(in_queue, out_queue)
     await logon_connector.run()
-    del logon_connector
-    game_connector = GameConnector()
+    game_connector = GameConnector(discord_queue, in_queue, out_queue)
     await game_connector.run()
 
 

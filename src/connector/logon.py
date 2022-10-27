@@ -4,25 +4,30 @@ import socket
 import PyByteBuffer
 
 from src.common.config import glob
-from src.connector.base import Connector
+from src.connector.base import WoWConnector
 from src.common.commonclasses import Packet
+from src.handlers.logon import LogonPacketHandler
 
 
-class LogonConnector(Connector):
-    def __init__(self):
-        super().__init__()
+class LogonConnector(WoWConnector):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.srp_handler = None
         self.logon_finished = False
+
+    def get_handler(self):
+        return LogonPacketHandler(self.out_queue)
 
     async def run(self):
         await self.out_queue.put(self.get_initial_packet())
         glob.logger.info(f'Connecting to logon server: {glob.connection_info.host}')
         try:
-            self.reader, self.writer = await asyncio.open_connection(glob.connection_info.host, glob.connection_info.port)
+            self.reader, self.writer = await asyncio.open_connection(glob.connection_info.host,
+                                                                     glob.connection_info.port)
         except socket.gaierror:
             glob.logger.error('Can\'t establish connection')
             return
-        self.main_task = asyncio.gather(self.receiver_coroutine(), self.sender_coroutine(), self.handler_coroutine())
+        self.main_task = asyncio.gather(self.receiver_coro(), self.sender_coro(), self.handler_coro())
         try:
             await self.main_task
         except asyncio.exceptions.CancelledError:

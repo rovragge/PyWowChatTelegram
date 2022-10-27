@@ -7,31 +7,48 @@ from src.common.config import glob
 from src.encoder import PacketEncoder
 from src.decoder import PacketDecoder
 
+
 class Connector:
-    RECV_SIZE = 8192
-
-    def __init__(self):
-        self.reader = None
-        self.writer = None
+    def __init__(self, in_queue, out_queue):
         self.main_task = None
-        self.in_queue = asyncio.Queue()
-        self.out_queue = asyncio.Queue()
-        self.discord_queue = asyncio.Queue()
+        self.in_queue = in_queue
+        self.out_queue = out_queue
+        self.handler = self.get_handler()
 
-        self.decoder = PacketDecoder()
-        self.encoder = PacketEncoder()
-        self.handler = getattr(import_module(f'src.handler.{glob.connection_info.expansion}'), 'PacketHandler')(
-            self.out_queue,
-            self.discord_queue)
-        self.logon_finished = True
+    def get_handler(self):
+        raise NotImplementedError
 
-    async def run(self):
+    def run(self):
+        raise NotImplementedError
+
+    def receiver_coro(self):
         raise NotImplementedError
 
     def handle_result(self, result):
-        raise NotImplementedError
+        pass
 
-    async def sender_coroutine(self):
+    async def handler_coro(self):
+        while True:
+            try:
+                packet = await self.in_queue.get()
+            except asyncio.exceptions.CancelledError:
+                break
+            self.handle_result(self.handler.handle_packet(packet))
+
+
+class WoWConnector(Connector):
+    RECV_SIZE = 8192
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.reader = None
+        self.writer = None
+
+        self.decoder = PacketDecoder()
+        self.encoder = PacketEncoder()
+        self.logon_finished = True
+
+    async def sender_coro(self):
         while not self.writer.is_closing():
             try:
                 packet = await self.out_queue.get()
@@ -41,10 +58,10 @@ class Connector:
                 break
             # cfg.logger.debug(f'PACKET SENT: {packet}')
 
-    async def receiver_coroutine(self):
+    async def receiver_coro(self):
         while not self.writer.is_closing():
             try:
-                data = await self.reader.read(Connector.RECV_SIZE)
+                data = await self.reader.read(WoWConnector.RECV_SIZE)
                 if not data:
                     glob.logger.error('Received empty packet')
                     for task in asyncio.all_tasks():
@@ -64,12 +81,3 @@ class Connector:
                         break
             except asyncio.exceptions.CancelledError:
                 break
-
-    async def handler_coroutine(self):
-        while not self.writer.is_closing():
-            try:
-                packet = await self.in_queue.get()
-            except asyncio.exceptions.CancelledError:
-                break
-            result = self.handler.handle_packet(packet)
-            self.handle_result(result)

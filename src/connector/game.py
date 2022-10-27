@@ -4,17 +4,21 @@ import socket
 
 from src.common.config import glob
 from src.common.commonclasses import Packet
-from src.connector.base import Connector
+from src.connector.base import WoWConnector
 from discord_bot import DiscordBot
-
+from src.handlers.WotLK import GamePacketHandler
 import discord
 
 
-class GameConnector(Connector):
+class GameConnector(WoWConnector):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, discord_queue, *args, **kwargs):
+        self.discord_queue = discord_queue
         self.discord_bot = None
         super().__init__(*args, **kwargs)
+
+    def get_handler(self):
+        return GamePacketHandler(self.discord_queue, self.out_queue)
 
     async def run(self):
         glob.logger.info(f'Connecting to game server: {glob.realm["name"]}')
@@ -23,7 +27,7 @@ class GameConnector(Connector):
         except socket.gaierror:
             glob.logger.critical('Can\'t establish  connection')
             return
-        self.main_task = asyncio.gather(self.receiver_coroutine(), self.sender_coroutine(), self.handler_coroutine(),
+        self.main_task = asyncio.gather(self.receiver_coro(), self.sender_coro(), self.handler_coro(),
                                         self.discord_receiver_coroutine(), self.discord_writer_coroutine())
         try:
             await self.main_task
@@ -44,7 +48,8 @@ class GameConnector(Connector):
 
     async def discord_receiver_coroutine(self):
         needed_intents = discord.Intents.default()
-        self.discord_bot = DiscordBot('.', out_queue=self.out_queue, status=discord.Status.online, intents=needed_intents)
+        self.discord_bot = DiscordBot('.', out_queue=self.out_queue, status=discord.Status.online,
+                                      intents=needed_intents)
         await self.discord_bot.start(glob.token)
 
     async def discord_writer_coroutine(self):

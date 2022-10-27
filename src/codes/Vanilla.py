@@ -408,11 +408,11 @@ class ServerHeaders(CodeCollection):
 
 
 class DiscordHeaders(CodeCollection):
-    MESSAGE = 0x000
-    ACTIVITY_UPDATE = 0x001
-    GUILD_EVENT = 0x002
-    CALENDAR_EVENT_CREATION = 0x003
-
+    MESSAGE = 0x00
+    ACTIVITY_UPDATE = 0x01
+    GUILD_EVENT = 0x02
+    ADD_CALENDAR_EVENT = 0x03
+    REMOVE_CALENDAR_EVENT = 0x04
 
 class Codes:
     classes = CharClasses

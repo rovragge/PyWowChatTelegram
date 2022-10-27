@@ -140,6 +140,9 @@ class PacketHandler(TBC.PacketHandler):
         if event_id not in glob.calendar.events:
             glob.logger.error(f'Received  removal alert for {event_id} calendar event, but no such event recorded')
             return
+        event = glob.calendar.events[event_id]
+        for embed in event.embeds:
+            self.discord_queue.put_nowait(Packet(glob.codes.discord_headers.REMOVE_CALENDAR_EVENT,embed))
         del glob.calendar.events[event_id]
         glob.logger.debug(f'Removed calendar event {event_id}')
 
@@ -196,7 +199,7 @@ class PacketHandler(TBC.PacketHandler):
             utils.read_string(data)
             event.invites.append(invite)
         glob.calendar.events[event.id] = event
-        self.discord_queue.put_nowait(Packet(glob.codes.discord_headers.CALENDAR_EVENT_CREATION, event))
+        self.discord_queue.put_nowait(Packet(glob.codes.discord_headers.ADD_CALENDAR_EVENT, event))
 
     @staticmethod
     def unpack_guid(data):

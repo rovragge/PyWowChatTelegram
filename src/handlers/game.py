@@ -35,7 +35,7 @@ class GamePacketHandler(PacketHandler):
 
     def handle_AUTH_CHALLENGE(self, data):
         challenge = self.parse_auth_challenge(data)
-        glob.crypt.initialize(glob.realm['session_key'])
+        glob.crypt.initialize(glob.realm.session_key)
         self.out_queue.put_nowait(Packet(glob.codes.client_headers.AUTH_CHALLENGE, challenge))
 
     def parse_auth_challenge(self, data):
@@ -52,14 +52,14 @@ class GamePacketHandler(PacketHandler):
         buff.put(0, 5)
         buff.put(client_seed)
         buff.put(0, 8)
-        buff.put(glob.realm['id'], 4, 'little')
+        buff.put(glob.realm.id, 4, 'little')
         buff.put(3, 8, 'little')
 
         md = hashlib.sha1(bin_account)
         md.update(bytearray(4))
         md.update(int.to_bytes(client_seed, 4, 'big'))
         md.update(int.to_bytes(server_seed, 4, 'big'))
-        md.update(glob.realm['session_key'])
+        md.update(glob.realm.session_key)
 
         buff.put(md.digest())
         buff.put(GamePacketHandler.ADDON_INFO)

@@ -21,9 +21,9 @@ class GameConnector(WoWConnector):
         return GamePacketHandler(self.discord_queue, self.out_queue)
 
     async def run(self):
-        glob.logger.info(f'Connecting to game server: {glob.realm["name"]}')
+        glob.logger.info(f'Connecting to game server: {glob.realm.name}')
         try:
-            self.reader, self.writer = await asyncio.open_connection(glob.realm['host'], glob.realm['port'])
+            self.reader, self.writer = await asyncio.open_connection(glob.realm.host, glob.realm.port)
         except socket.gaierror:
             glob.logger.critical('Can\'t establish  connection')
             return

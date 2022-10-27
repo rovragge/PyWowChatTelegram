@@ -1,7 +1,6 @@
 import hashlib
-import re
 from src.common.utils import read_string
-from src.common.commonclasses import Packet
+from src.common.commonclasses import Packet, Realm
 from src.common.config import glob
 from src.common.SRP import SRPHandler
 from src.handlers.base import PacketHandler
@@ -60,42 +59,36 @@ class LogonPacketHandler(PacketHandler):
 
     def handle_REALM_LIST(self, data):
         realms = self.parse_realm_list(data)
-        target_realm = tuple(filter(lambda r: r['name'].lower() == glob.connection_info.realm_name.lower(), realms))[0]
+        target_realm = tuple(filter(lambda r: r.name.lower() == glob.connection_info.realm_name.lower(), realms))[0]
         if not target_realm:
             glob.logger.error(f'Realm {glob.connection_info.realm_name} not found!')
             return
-        target_realm['session_key'] = int.to_bytes(self.srp_handler.K, 40, 'little')
+        target_realm.session_key = int.to_bytes(self.srp_handler.K, 40, 'little')
         glob.realm = target_realm
         return 1
 
     @staticmethod
     def parse_realm_list(data):  # different for Vanilla/TBC+
-        not_vanilla = glob.connection_info.expansion != 'Vanilla'
         data.get(4)
         realms = []
         realm_count = data.get(2, endianness='little')
         for _ in range(realm_count):
-            realm = {}
-            realm['is_pvp'] = bool(data.get(1)) if not_vanilla else None
-            realm['lock_flag'] = bool(data.get(1)) if not_vanilla else None
-            realm['flags'] = data.get(1)  # offline/recommended/for newbies
-            realm['name'] = read_string(data)
+            realm = Realm()
+            realm.is_pvp = bool(data.get(1))
+            realm.lock_flag = bool(data.get(1))
+            realm.flags = data.get(1)  # offline/recommended/for newbies
+            realm.name = read_string(data)
             address = read_string(data).split(':')
-            realm['host'] = address[0]
-            realm['port'] = int(address[1])
-            realm['population'] = data.get(4)
-            realm['num_chars'] = data.get(1)
-            realm['timezone'] = data.get(1)
-            realm['id'] = data.get(1)
-            if realm['flags'] & 0x04 == 0x04:
-                realm['build_info'] = data.get(5) if not_vanilla else None
-                # exclude build info from realm name
-                realm['name'] == realm['name'] if not_vanilla else re.sub(r'\(\d+,\d+,\d+\)', '', realm['name'])
-            else:
-                realm['build_info'] = None
+            realm.host = address[0]
+            realm.port = int(address[1])
+            realm.population = data.get(4)
+            realm.num_chars = data.get(1)
+            realm.timezone = data.get(1)
+            realm.id = data.get(1)
+            realm.build_info = data.get(5) if realm.flags & 0x04 == 0x04 else None
             realms.append(realm)
         string = 'Available realms:' + ''.join(
-            [f'\n\t{realm["name"]} {"PvP" if realm["is_pvp"] else "PvE"} - {realm["host"]}:{realm["port"]}'
+            [f'\n\t{realm.name} {"PvP" if realm.is_pvp else "PvE"} - {realm.host}:{realm.port}'
              for realm in realms])
         glob.logger.debug(string)
         return realms

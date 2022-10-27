@@ -121,6 +121,22 @@ class ConnectionInfo:
             raise ValueError
         return expansion
 
+class Realm:
+    def __init__(self):
+        self.is_pvp = False
+        self.lock_flag = None
+        self.flags = None
+        self.name = ''
+        self.host = None
+        self.port = None
+        self.population = None
+        self.num_chars = None
+        self.timezone = None
+        self.id = None
+        self.build_info = None
+        self.session_key = None
+
+
 
 class Calendar:
 

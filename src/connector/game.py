@@ -6,7 +6,7 @@ from src.common.config import glob
 from src.common.commonclasses import Packet
 from src.connector.base import WoWConnector
 from discord_bot import DiscordBot
-from src.handlers.WotLK import GamePacketHandler
+from src.handlers.game import GamePacketHandler
 import discord
 
 

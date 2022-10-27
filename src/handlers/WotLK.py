@@ -7,11 +7,11 @@ import PyByteBuffer
 import src.common.utils as utils
 
 from src.common.config import glob
-from src.handler import TBC
+from src.handlers import TBC
 from src.common.commonclasses import ChatMessage, Character, CalendarInvite, CalendarEvent, Holiday, Packet
 
 
-class PacketHandler(TBC.PacketHandler):
+class GamePacketHandler(TBC.GamePacketHandler):
     ADDON_INFO = b'\x9e\x02\x00\x00x\x9cu\xd2\xc1j\xc30\x0c\xc6q\xef)v\xe9\x9b\xec\xb4\xb4P\xc2\xea\xcb\xe2\x9e\x8bb' \
                  b'\x7fKDl98N\xb7\xf6=\xfa\xbee\xb7\r\x94\xf3OH\xf0G\xaf\xc6\x98&\xf2\xfdN%\\\xde\xfd\xc8\xb8"A\xea' \
                  b'\xb95/\xe9{w2\xff\xbc@H\x97\xd5W\xce\xa2ZC\xa5GY\xc6<op\xad\x11_\x8c\x18,\x0b\'\x9a\xb5!\x96\xc02' \
@@ -44,7 +44,7 @@ class PacketHandler(TBC.PacketHandler):
         md.update(glob.realm['session_key'])
 
         buff.put(md.digest())
-        buff.put(PacketHandler.ADDON_INFO)
+        buff.put(GamePacketHandler.ADDON_INFO)
         buff.strip()
         buff.rewind()
         return buff.array()

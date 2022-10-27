@@ -2,11 +2,11 @@ import time
 
 from src.common import utils as utils
 from src.common.config import glob
-from src.handler import Vanilla
+from src.handlers import Vanilla
 from src.common.commonclasses import Packet, ChatMessage, Character
 
 
-class PacketHandler(Vanilla.PacketHandler):
+class GamePacketHandler(Vanilla.GamePacketHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.connect_time = time.time_ns()
@@ -32,7 +32,7 @@ class PacketHandler(Vanilla.PacketHandler):
         if msg.language in (-1, 4294967295):  # addon messages and questionable stuff
             return
         msg.guid = data.get(8, 'little')
-        if msg.channel != glob.codes.chat_channels.SYSTEM and msg.guid == self.character.guid:
+        if msg.channel != glob.codes.chat_channels.SYSTEM and msg.guid == glob.character.guid:
             return
         data.get(4)
         msg.channel_name = utils.read_string(data) if msg.channel == glob.codes.chat_channels.CHANNEL else None

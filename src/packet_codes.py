@@ -132,27 +132,28 @@ class CharGenders(CodeCollection):
 
 
 class ChatChannels(CodeCollection):
-    SAY = 0x00
-    GUILD = 0x03
-    OFFICER = 0x04
-    YELL = 0x05
-    WHISPER = 0x06
-    EMOTE = 0x08
-    TEXT_EMOTE = 0x09
-    CHANNEL = 0x0E
-    SYSTEM = 0x0A
-    CHANNEL_JOIN = 0x0F
-    CHANNEL_LEAVE = 0x10
-    CHANNEL_LIST = 0x11
-    CHANNEL_NOTICE = 0x12
-    CHANNEL_NOTICE_USER = 0x13
+    SYSTEM = 0x00
+    SAY = 0x01
+    GUILD = 0x04
+    OFFICER = 0x05
+    YELL = 0x06
+    WHISPER = 0x07
+    TEXT_EMOTE = 0x0B
+    CHANNEL = 0x11
+    CHANNEL_JOIN = 0x12
+    CHANNEL_LEAVE = 0x13
+    CHANNEL_LIST = 0x14
+    CHANNEL_NOTICE = 0x15
+    CHANNEL_NOTICE_USER = 0x16
+    GUILD_RECRUITMENT = 0x19
+    EMOTE = 0x0A
+    ANNOUNCEMENT = 0xFF
     ACHIEVEMENT = 0x30
     GUILD_ACHIEVEMENT = 0x31
     GENERAL = 0x01
     TRADE = 0x02
     LOCAL_DEFENSE = 0x16
     WORLD_DEFENSE = 0x17
-    GUILD_RECRUITMENT = 0x00
     LOOKING_FOR_GROUP = 0x1A
 
 
@@ -220,6 +221,7 @@ class ClientHeaders(CodeCollection):
     TIME_SYNC_RESP = 0x039
     WARDEN_DATA = 0x02E7
     WHO = 0x62
+    KEEP_ALIVE = 0x0407
 
     GROUP_INVITE = 0x06E
     GROUP_ACCEPT = 0x072
@@ -286,6 +288,8 @@ class ServerHeaders(CodeCollection):
     LOGIN_SETTIMESPEED = 0x042
     SET_FORCED_REACTIONS = 0x2a5
     INIT_WORLD_STATES = 0x2c2
+    GM_MESSAGECHAT = 0x03B3
+    MOTD = 0x033D
     EMOTE = 0x103
     PONG = 0x1dd
     MONSTER_MOVE = 0x0DD

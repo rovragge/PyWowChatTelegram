@@ -6,9 +6,10 @@ import dotenv
 
 from src.common.commonclasses import Character, Guild, ConnectionInfo, Calendar
 from src.header_crypt import GameHeaderCrypt
+from src.packet_codes import Codes
 
 import lxml.objectify
-from importlib import import_module
+
 
 
 class Globals:
@@ -43,7 +44,7 @@ class Globals:
         self.connection_info.expansion = self.connection_info.get_expansion()
         self.server_MOTD_enabled = bool(xml_obj.wow.server_motd_enabled)
 
-        self.codes = getattr(import_module(f'src.codes.{self.connection_info.expansion}'), 'Codes')
+        self.codes = Codes()
         self.crypt = GameHeaderCrypt()
 
         self.maps = {self.codes.chat_channels.get_from_str(x.tag.upper()): x for x in

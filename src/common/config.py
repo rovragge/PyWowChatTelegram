@@ -11,7 +11,6 @@ from src.packet_codes import Codes
 import lxml.objectify
 
 
-
 class Globals:
 
     def __init__(self):
@@ -31,6 +30,7 @@ class Globals:
         self.logger = self.setup_log(xml_obj.logger)
         self.timezone = datetime.timezone(datetime.timedelta(hours=3), 'Moscow')
 
+        self.reconnect_delay = int(xml_obj.wow.reconnect_delay)
         self.connection_info.account = os.environ.get('WOW_ACC').upper()
         self.connection_info.password = os.environ.get('WOW_PASS').upper()
         self.connection_info.realm_name = os.environ.get('WOW_REALM')
@@ -45,7 +45,8 @@ class Globals:
         self.server_MOTD_enabled = bool(xml_obj.wow.server_motd_enabled)
 
         self.codes = Codes()
-        self.crypt = GameHeaderCrypt()
+        self.crypt = None
+        self.reset_crypt()
 
         self.maps = {self.codes.chat_channels.get_from_str(x.tag.upper()): x for x in
                      xml_obj.discord.channels.getchildren()}
@@ -96,6 +97,9 @@ class Globals:
             host = realmlist[:split_pos]
             port = realmlist[:split_pos + 1]
         return host, port
+
+    def reset_crypt(self):
+        self.crypt = GameHeaderCrypt()
 
 
 glob = Globals()

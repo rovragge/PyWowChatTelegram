@@ -5,9 +5,7 @@ import socket
 from src.common.config import glob
 from src.common.commonclasses import Packet
 from src.connector.base import WoWConnector
-from discord_bot import DiscordBot
 from src.handlers.game import GamePacketHandler
-import discord
 
 
 class GameConnector(WoWConnector):
@@ -27,45 +25,22 @@ class GameConnector(WoWConnector):
         except socket.gaierror:
             glob.logger.critical('Can\'t establish  connection')
             return
-        self.main_task = asyncio.gather(self.receiver_coro(), self.sender_coro(), self.handler_coro(),
-                                        self.discord_receiver_coroutine(), self.discord_writer_coroutine())
+        self.tasks.append(asyncio.create_task(self.receiver_coro(), name='Game receiver'))
+        self.tasks.append(asyncio.create_task(self.sender_coro(), name='Game sender'))
+        self.tasks.append(asyncio.create_task(self.handler_coro(), name='Game handler'))
         try:
-            await self.main_task
+            await asyncio.gather(*self.tasks)
         except asyncio.exceptions.CancelledError:
             return
 
     def handle_result(self, result):
         match result:
             case 1:  # Disconnect
-                self.writer.close()
-                for task in asyncio.all_tasks():
-                    task.cancel()
+                self.end()
             case 2:  # World login verified
-                asyncio.create_task(self.ping_coroutine(30, 30), name='ping')
-                asyncio.create_task(self.roster_update_coroutine(21, 21), name='roster_update')
-                if glob.connection_info.expansion != 'Vanilla':
-                    asyncio.create_task(self.keep_alive_coroutine(15, 30), name='keep_alive')
-
-    async def discord_receiver_coroutine(self):
-        needed_intents = discord.Intents.default()
-        self.discord_bot = DiscordBot('.', out_queue=self.out_queue, status=discord.Status.online,
-                                      intents=needed_intents)
-        await self.discord_bot.start(glob.token)
-
-    async def discord_writer_coroutine(self):
-        while not self.writer.is_closing() and not self.discord_bot.is_closed():
-            if not self.discord_bot.is_ready():
-                await asyncio.sleep(1)
-                continue
-            try:
-                packet = await self.discord_queue.get()
-            except asyncio.exceptions.CancelledError:
-                break
-            else:
-                if not isinstance(packet, Packet):
-                    glob.logger.error('Something other than packet in discord queue!')
-                    continue
-                self.discord_bot.handle_packet(packet)
+                self.tasks.append(asyncio.create_task(self.ping_coroutine(30, 30), name='ping'))
+                self.tasks.append(asyncio.create_task(self.roster_update_coroutine(21, 21), name='roster_update'))
+                self.tasks.append(asyncio.create_task(self.keep_alive_coroutine(5, 30), name='keep_alive'))
 
     async def ping_coroutine(self, initial_delay, delay):
         # glob.logger.debug('Ping coroutine alive')

@@ -26,18 +26,19 @@ class LogonConnector(WoWConnector):
                                                                      glob.connection_info.port)
         except socket.gaierror:
             glob.logger.error('Can\'t establish connection')
-            return
-        self.main_task = asyncio.gather(self.receiver_coro(), self.sender_coro(), self.handler_coro())
+            self.end()
+        self.tasks.append(asyncio.create_task(self.receiver_coro(), name='Game receiver'))
+        self.tasks.append(asyncio.create_task(self.sender_coro(), name='Game sender'))
+        self.tasks.append(asyncio.create_task(self.handler_coro(), name='Game handler'))
         try:
-            await self.main_task
+            await asyncio.gather(*self.tasks)
         except asyncio.exceptions.CancelledError:
             return
 
     def handle_result(self, result):
         match result:
             case 1:
-                self.writer.close()
-                self.main_task.cancel()
+                self.end()
 
     def get_initial_packet(self):
         version = [bytes(x, 'utf-8') for x in glob.connection_info.version.split('.')]

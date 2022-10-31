@@ -1,5 +1,4 @@
 import asyncio
-from importlib import import_module
 
 import PyByteBuffer
 
@@ -10,10 +9,14 @@ from src.decoder import PacketDecoder
 
 class Connector:
     def __init__(self, in_queue, out_queue):
-        self.main_task = None
         self.in_queue = in_queue
         self.out_queue = out_queue
+        self.tasks = []
         self.handler = self.get_handler()
+
+    def end(self):
+        for task in self.tasks:
+            task.cancel()
 
     def get_handler(self):
         raise NotImplementedError
@@ -43,10 +46,15 @@ class WoWConnector(Connector):
         super().__init__(*args, **kwargs)
         self.reader = None
         self.writer = None
+        self.sender_task = None
 
         self.decoder = PacketDecoder()
         self.encoder = PacketEncoder()
         self.logon_finished = True
+
+    def end(self):
+        self.writer.close()
+        super().end()
 
     async def sender_coro(self):
         while not self.writer.is_closing():
@@ -56,7 +64,6 @@ class WoWConnector(Connector):
                 await self.writer.drain()
             except asyncio.exceptions.CancelledError:
                 break
-            # cfg.logger.debug(f'PACKET SENT: {packet}')
 
     async def receiver_coro(self):
         while not self.writer.is_closing():
@@ -64,16 +71,13 @@ class WoWConnector(Connector):
                 data = await self.reader.read(WoWConnector.RECV_SIZE)
                 if not data:
                     glob.logger.error('Received empty packet')
-                    for task in asyncio.all_tasks():
-                        task.cancel()
-                    self.writer.close()
+                    self.end()
                 if self.decoder.remaining_data:
                     data = self.decoder.remaining_data + data
                 buff = PyByteBuffer.ByteBuffer.wrap(data)  # While loop accesses same buffer each time
                 while True:
                     packet = self.decoder.decode(buff, self.logon_finished)
                     if packet:
-                        # cfg.logger.debug(f'PACKET RECV: {packet}')
                         await self.in_queue.put(packet)
                         if not self.decoder.incomplete_packet:
                             break

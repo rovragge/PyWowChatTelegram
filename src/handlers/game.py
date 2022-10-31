@@ -101,7 +101,7 @@ class GamePacketHandler(PacketHandler):
             char = Character()
             char.guid = data.get(8, 'little')
             char.name = utils.read_string(data)
-            if char.name.lower() == glob.character.name:
+            if char.name.lower() == glob.character.name.lower():
                 correct_char = char
             char.race = data.get(1)
             char.language = glob.codes.races.get_language(char.race)

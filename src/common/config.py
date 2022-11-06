@@ -21,25 +21,17 @@ class Globals:
             xml_obj = lxml.objectify.fromstring(xml_file.read())
 
         self.logon_info = LogonInfo()
-        self.character = Character()
+        self.character = Character(name=os.environ.get('WOW_CHAR'))
         self.guild = Guild()
         self.players = {}
         self.calendar = Calendar()
         self.realm = None
 
-        self.logger = self.setup_log(xml_obj.logger)
+        self.logger = self.get_logger(xml_obj.logger)
+        self.logon_info = self.get_logon_info(xml_obj)
         self.timezone = datetime.timezone(datetime.timedelta(hours=3), 'Moscow')
-
         self.reconnect_delay = int(xml_obj.wow.reconnect_delay)
-        self.logon_info.account = os.environ.get('WOW_ACC').upper()
-        self.logon_info.password = os.environ.get('WOW_PASS').upper()
-        self.logon_info.address.name = os.environ.get('WOW_REALM')
-        self.logon_info.address.parse(os.environ.get('WOW_LOGON'))
-        self.character.name = os.environ.get('WOW_CHAR')
         self.token = os.environ.get('DISCORD_TOKEN')
-        self.logon_info.version = str(xml_obj.wow.version)
-        self.logon_info.platform = str(xml_obj.wow.platform)
-        self.logon_info.locale = str(xml_obj.wow.locale)
         self.server_MOTD_enabled = bool(xml_obj.wow.server_motd_enabled)
 
         self.codes = Codes()
@@ -64,7 +56,19 @@ class Globals:
                           f'realm = {self.logon_info.address.name}')
 
     @staticmethod
-    def setup_log(logger_cfg):
+    def get_logon_info(xml_obj):
+        logon_info = LogonInfo()
+        logon_info.account = os.environ.get('WOW_ACC').upper()
+        logon_info.password = os.environ.get('WOW_PASS').upper()
+        logon_info.address.name = os.environ.get('WOW_REALM')
+        logon_info.address.parse(os.environ.get('WOW_LOGON'))
+        logon_info.version = str(xml_obj.wow.version)
+        logon_info.platform = str(xml_obj.wow.platform)
+        logon_info.locale = str(xml_obj.wow.locale)
+        return logon_info
+
+    @staticmethod
+    def get_logger(logger_cfg):
         log = logging.getLogger(str(logger_cfg.name) if logger_cfg.name else 'app')
         try:
             log_level = getattr(logging, str(logger_cfg.level).upper())

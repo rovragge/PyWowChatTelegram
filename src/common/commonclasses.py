@@ -38,9 +38,9 @@ class Packet:
 
 
 class Character:
-    def __init__(self):
+    def __init__(self, name=None):
         self.guid = None
-        self.name = None
+        self.name = name
         self.cross_name = None
         self.race = None
         self.language = None

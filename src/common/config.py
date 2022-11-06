@@ -33,15 +33,13 @@ class Globals:
         self.reconnect_delay = int(xml_obj.wow.reconnect_delay)
         self.logon_info.account = os.environ.get('WOW_ACC').upper()
         self.logon_info.password = os.environ.get('WOW_PASS').upper()
-        self.logon_info.realm_name = os.environ.get('WOW_REALM')
+        self.logon_info.address.name = os.environ.get('WOW_REALM')
+        self.logon_info.address.parse(os.environ.get('WOW_LOGON'))
         self.character.name = os.environ.get('WOW_CHAR')
         self.token = os.environ.get('DISCORD_TOKEN')
         self.logon_info.version = str(xml_obj.wow.version)
         self.logon_info.platform = str(xml_obj.wow.platform)
         self.logon_info.locale = str(xml_obj.wow.locale)
-        self.logon_info.host, self.logon_info.port = self.parse_realm_list(os.environ.get('WOW_LOGON'))
-        self.logon_info.build = self.logon_info.get_build()
-        self.logon_info.expansion = self.logon_info.get_expansion()
         self.server_MOTD_enabled = bool(xml_obj.wow.server_motd_enabled)
 
         self.codes = Codes()
@@ -61,9 +59,9 @@ class Globals:
                           f'expansion = {self.logon_info.expansion}\n\t'
                           f'version = {self.logon_info.version}\n\t'
                           f'build = {self.logon_info.build}\n\t'
-                          f'host = {self.logon_info.host}\n\t'
-                          f'port = {self.logon_info.port}\n\t'
-                          f'realm = {self.logon_info.realm_name}')
+                          f'host = {self.logon_info.address.host}\n\t'
+                          f'port = {self.logon_info.address.port}\n\t'
+                          f'realm = {self.logon_info.address.name}')
 
     @staticmethod
     def setup_log(logger_cfg):
@@ -86,17 +84,6 @@ class Globals:
             handler.setFormatter(logging.Formatter(log_format))
             log.addHandler(handler)
         return log
-
-    @staticmethod
-    def parse_realm_list(realmlist):
-        split_pos = realmlist.find(':')
-        if split_pos == -1:
-            host = realmlist
-            port = 3724
-        else:
-            host = realmlist[:split_pos]
-            port = realmlist[:split_pos + 1]
-        return host, port
 
     def reset_crypt(self):
         self.crypt = GameHeaderCrypt()

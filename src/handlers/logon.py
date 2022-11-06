@@ -59,7 +59,8 @@ class LogonPacketHandler(PacketHandler):
 
     def handle_REALM_LIST(self, data):
         realms = self.parse_realm_list(data)
-        target_realm = tuple(filter(lambda r: r.name.lower() == glob.logon_info.realm_name.lower(), realms))[0]
+        target_realm = tuple(filter(lambda r: r.address.name.lower() == glob.logon_info.address.name.lower(), realms))[
+            0]
         if not target_realm:
             glob.logger.error(f'Realm {glob.logon_info.realm_name} not found!')
             return
@@ -77,10 +78,8 @@ class LogonPacketHandler(PacketHandler):
             realm.is_pvp = bool(data.get(1))
             realm.lock_flag = bool(data.get(1))
             realm.flags = data.get(1)  # offline/recommended/for newbies
-            realm.name = read_string(data)
-            address = read_string(data).split(':')
-            realm.host = address[0]
-            realm.port = int(address[1])
+            realm.address.name = read_string(data)
+            realm.address.parse(read_string(data))
             realm.population = data.get(4)
             realm.num_chars = data.get(1)
             realm.timezone = data.get(1)
@@ -88,7 +87,7 @@ class LogonPacketHandler(PacketHandler):
             realm.build_info = data.get(5) if realm.flags & 0x04 == 0x04 else None
             realms.append(realm)
         string = 'Available realms:' + ''.join(
-            [f'\n\t{realm.name} {"PvP" if realm.is_pvp else "PvE"} - {realm.host}:{realm.port}'
+            [f'\n\t{realm.address.name} {"PvP" if realm.is_pvp else "PvE"} - {realm.address.host}:{realm.address.port}'
              for realm in realms])
         glob.logger.debug(string)
         return realms

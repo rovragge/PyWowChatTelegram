@@ -1,3 +1,4 @@
+import os
 import PyByteBuffer
 from src.common.utils import bytes_to_hex_str
 
@@ -92,6 +93,22 @@ class Guild:
         return self.guid is not None
 
 
+class Address:
+    def __init__(self):
+        self.name = ''
+        self.host = None
+        self.port = None
+
+    def parse(self, string):
+        string = string.split(':')
+        if len(string) == 1:
+            self.host = string[0]
+            self.port = 3724
+        else:
+            self.host = string[0]
+            self.port = string[1]
+
+
 class LogonInfo:
     def __init__(self):
         self.account = None
@@ -99,27 +116,9 @@ class LogonInfo:
         self.locale = None
         self.platform = None
         self.version = None
-        self.realm_name = None
-        self.host = None
-        self.port = None
-        self.expansion = None
-        self.build = None
-
-    def get_build(self):
-        build_map = {'1.11.2': 5464, '1.12.1': 5875, '1.12.2': 6005, '1.12.3': 6141,
-                     '2.4.3': 8606,
-                     '3.2.2': 10505, '3.3.0': 11159, '3.3.2': 11723, '3.3.5': 12340}
-        build = build_map[self.version]
-        if not build:
-            raise ValueError
-        return build
-
-    def get_expansion(self):
-        expansion_map = {'1': 'Vanilla', '2': 'TBC', '3': 'WotLK'}
-        expansion = expansion_map.get(self.version[0])
-        if not expansion:
-            raise ValueError
-        return expansion
+        self.address = Address()
+        self.expansion = 'WotLK'
+        self.build = 12340
 
 
 class Realm:
@@ -127,9 +126,7 @@ class Realm:
         self.is_pvp = False
         self.lock_flag = None
         self.flags = None
-        self.name = ''
-        self.host = None
-        self.port = None
+        self.address = Address()
         self.population = None
         self.num_chars = None
         self.timezone = None

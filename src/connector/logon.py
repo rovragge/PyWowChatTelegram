@@ -20,10 +20,10 @@ class LogonConnector(WoWConnector):
 
     async def run(self):
         await self.out_queue.put(self.get_initial_packet())
-        glob.logger.info(f'Connecting to logon server: {glob.logon_info.host}')
+        glob.logger.info(f'Connecting to logon server: {glob.logon_info.address.name}')
         try:
-            self.reader, self.writer = await asyncio.open_connection(glob.logon_info.host,
-                                                                     glob.logon_info.port)
+            self.reader, self.writer = await asyncio.open_connection(glob.logon_info.address.host,
+                                                                     glob.logon_info.address.port)
         except socket.gaierror:
             glob.logger.error('Can\'t establish connection')
             self.end()

@@ -92,7 +92,7 @@ class Guild:
         return self.guid is not None
 
 
-class ConnectionInfo:
+class LogonInfo:
     def __init__(self):
         self.account = None
         self.password = None
@@ -121,6 +121,7 @@ class ConnectionInfo:
             raise ValueError
         return expansion
 
+
 class Realm:
     def __init__(self):
         self.is_pvp = False
@@ -135,7 +136,6 @@ class Realm:
         self.id = None
         self.build_info = None
         self.session_key = None
-
 
 
 class Calendar:

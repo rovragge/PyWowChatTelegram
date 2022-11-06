@@ -59,9 +59,9 @@ class LogonPacketHandler(PacketHandler):
 
     def handle_REALM_LIST(self, data):
         realms = self.parse_realm_list(data)
-        target_realm = tuple(filter(lambda r: r.name.lower() == glob.connection_info.realm_name.lower(), realms))[0]
+        target_realm = tuple(filter(lambda r: r.name.lower() == glob.logon_info.realm_name.lower(), realms))[0]
         if not target_realm:
-            glob.logger.error(f'Realm {glob.connection_info.realm_name} not found!')
+            glob.logger.error(f'Realm {glob.logon_info.realm_name} not found!')
             return
         target_realm.session_key = int.to_bytes(self.srp_handler.K, 40, 'little')
         glob.realm = target_realm

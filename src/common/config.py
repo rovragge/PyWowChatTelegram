@@ -4,7 +4,7 @@ import datetime
 import sys
 import dotenv
 
-from src.common.commonclasses import Character, Guild, ConnectionInfo, Calendar
+from src.common.commonclasses import Character, Guild, LogonInfo, Calendar
 from src.header_crypt import GameHeaderCrypt
 from src.packet_codes import Codes
 
@@ -15,12 +15,12 @@ class Globals:
 
     def __init__(self):
 
-        dotenv.load_dotenv('../params.env')
+        dotenv.load_dotenv('./params.env')
 
         with open(os.path.join(os.path.dirname(sys.argv[0]), 'config.xml'), 'r', encoding='utf-8') as xml_file:
             xml_obj = lxml.objectify.fromstring(xml_file.read())
 
-        self.connection_info = ConnectionInfo()
+        self.logon_info = LogonInfo()
         self.character = Character()
         self.guild = Guild()
         self.players = {}
@@ -31,17 +31,17 @@ class Globals:
         self.timezone = datetime.timezone(datetime.timedelta(hours=3), 'Moscow')
 
         self.reconnect_delay = int(xml_obj.wow.reconnect_delay)
-        self.connection_info.account = os.environ.get('WOW_ACC').upper()
-        self.connection_info.password = os.environ.get('WOW_PASS').upper()
-        self.connection_info.realm_name = os.environ.get('WOW_REALM')
+        self.logon_info.account = os.environ.get('WOW_ACC').upper()
+        self.logon_info.password = os.environ.get('WOW_PASS').upper()
+        self.logon_info.realm_name = os.environ.get('WOW_REALM')
         self.character.name = os.environ.get('WOW_CHAR')
         self.token = os.environ.get('DISCORD_TOKEN')
-        self.connection_info.version = str(xml_obj.wow.version)
-        self.connection_info.platform = str(xml_obj.wow.platform)
-        self.connection_info.locale = str(xml_obj.wow.locale)
-        self.connection_info.host, self.connection_info.port = self.parse_realm_list(os.environ.get('WOW_LOGON'))
-        self.connection_info.build = self.connection_info.get_build()
-        self.connection_info.expansion = self.connection_info.get_expansion()
+        self.logon_info.version = str(xml_obj.wow.version)
+        self.logon_info.platform = str(xml_obj.wow.platform)
+        self.logon_info.locale = str(xml_obj.wow.locale)
+        self.logon_info.host, self.logon_info.port = self.parse_realm_list(os.environ.get('WOW_LOGON'))
+        self.logon_info.build = self.logon_info.get_build()
+        self.logon_info.expansion = self.logon_info.get_expansion()
         self.server_MOTD_enabled = bool(xml_obj.wow.server_motd_enabled)
 
         self.codes = Codes()
@@ -54,16 +54,16 @@ class Globals:
                              xml_obj.guild_events.getchildren()}
 
         self.logger.debug('Config values:\n\t'
-                          f'account = {self.connection_info.account}\n\t'
-                          f'password = {self.connection_info.password}\n\t'
-                          f'platform = {self.connection_info.platform}\n\t'
-                          f'locale = {self.connection_info.locale}\n\t'
-                          f'expansion = {self.connection_info.expansion}\n\t'
-                          f'version = {self.connection_info.version}\n\t'
-                          f'build = {self.connection_info.build}\n\t'
-                          f'host = {self.connection_info.host}\n\t'
-                          f'port = {self.connection_info.port}\n\t'
-                          f'realm = {self.connection_info.realm_name}')
+                          f'account = {self.logon_info.account}\n\t'
+                          f'password = {self.logon_info.password}\n\t'
+                          f'platform = {self.logon_info.platform}\n\t'
+                          f'locale = {self.logon_info.locale}\n\t'
+                          f'expansion = {self.logon_info.expansion}\n\t'
+                          f'version = {self.logon_info.version}\n\t'
+                          f'build = {self.logon_info.build}\n\t'
+                          f'host = {self.logon_info.host}\n\t'
+                          f'port = {self.logon_info.port}\n\t'
+                          f'realm = {self.logon_info.realm_name}')
 
     @staticmethod
     def setup_log(logger_cfg):

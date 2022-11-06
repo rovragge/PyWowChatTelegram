@@ -44,7 +44,7 @@ class PacketDecoder:
                         return
                     saved_position = buff.position
                     if glob.codes.logon_auth_results.is_success(buff.get(1)):
-                        self.packet_size = 25 if glob.connection_info.expansion == 'Vanilla' else 31
+                        self.packet_size = 25 if glob.logon_info.expansion == 'Vanilla' else 31
                     else:
                         self.packet_size = 1 if not buff.remaining else 3
                     self.reset_position(saved_position, buff)

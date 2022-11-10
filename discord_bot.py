@@ -34,9 +34,6 @@ class DiscordBot(Bot):
     # --------- EVENTS ---------
     async def on_ready(self):
         for guild in self.guilds:
-            channel = discord.utils.get(guild.channels, name=glob.maps[glob.codes.chat_channels.ANNOUNCEMENT])
-            if channel:
-                await channel.purge()
             for channel in guild.channels:
                 for x in self.target_channels:
                     if channel.name == glob.maps[x]:
@@ -71,6 +68,12 @@ class DiscordBot(Bot):
         else:
             await handler(packet.data)
 
+    async def handle_PURGE_CALENDAR(self, data):
+        for guild in self.guilds:
+            channel = discord.utils.get(guild.channels, name=glob.maps[glob.codes.chat_channels.ANNOUNCEMENT])
+            if channel:
+                await channel.purge()
+
     async def handle_ACTIVITY_UPDATE(self, data):
         activity = discord.Activity(name=f'{data} members online', type=discord.ActivityType.watching)
         await self.change_presence(status=discord.Status.online, activity=activity)
@@ -85,11 +88,11 @@ class DiscordBot(Bot):
         await data.delete()
 
     async def handle_ADD_CALENDAR_EVENT(self, data):
-        await asyncio.sleep(3)
+        embed = self.generate_embed(data)
         for guild in self.guilds:
             channel = discord.utils.get(guild.channels, name=glob.maps[glob.codes.chat_channels.ANNOUNCEMENT])
-            if not channel:
-                continue
+            if channel:
+                data.embeds.append(await channel.send(embed=embed))
 
     async def handle_UPDATE_CALENDAR_EVENT(self, data):
         new_embed = self.generate_embed(data)

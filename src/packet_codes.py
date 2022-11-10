@@ -417,6 +417,8 @@ class DiscordHeaders(CodeCollection):
     GUILD_EVENT = 0x02
     ADD_CALENDAR_EVENT = 0x03
     REMOVE_CALENDAR_EVENT = 0x04
+    PURGE_CALENDAR = 0x05
+    UPDATE_CALENDAR_EVENT = 0x06
 
 class Codes:
     classes = CharClasses

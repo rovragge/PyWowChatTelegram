@@ -31,6 +31,7 @@ class Globals:
         self.logon_info = self.get_logon_info(xml_obj)
         self.timezone = datetime.timezone(datetime.timedelta(hours=3), 'Moscow')
         self.reconnect_delay = int(xml_obj.wow.reconnect_delay)
+        self.db = str(xml_obj.discord.db)
         self.token = os.environ.get('DISCORD_TOKEN')
         self.server_MOTD_enabled = bool(xml_obj.wow.server_motd_enabled)
 

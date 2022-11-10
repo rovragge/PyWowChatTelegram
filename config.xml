@@ -7,6 +7,7 @@
         <format>%(levelname)s: %(message)s</format>
     </logger>
     <discord>
+        <db>https://wowroad.info/</db>
         <enable_dot_commands>1</enable_dot_commands>
         <dot_commands_whitelist>
             <dot_command>server_info</dot_command>

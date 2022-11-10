@@ -142,6 +142,7 @@ class GamePacketHandler(PacketHandler):
             return
         self.in_world = True
         glob.logger.info('Successfully joined the world')
+        self.discord_queue.put_nowait(Packet(glob.codes.discord_headers.PURGE_CALENDAR, None))
         self.out_queue.put_nowait(Packet(glob.codes.client_headers.CALENDAR_GET_CALENDAR, b''))
         if glob.character.guild_guid:
             self.out_queue.put_nowait(

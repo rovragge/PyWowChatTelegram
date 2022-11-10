@@ -38,7 +38,8 @@ class GamePacketHandler(PacketHandler):
         glob.crypt.initialize(glob.realm.session_key)
         self.out_queue.put_nowait(Packet(glob.codes.client_headers.AUTH_CHALLENGE, challenge))
 
-    def parse_auth_challenge(self, data):
+    @staticmethod
+    def parse_auth_challenge(data):
         buff = PyByteBuffer.ByteBuffer.allocate(400)
         bin_account = bytes(glob.logon_info.account, 'utf-8')
 
@@ -398,7 +399,8 @@ class GamePacketHandler(PacketHandler):
         out_data = int.to_bytes(counter, 4, 'little') + int.to_bytes(uptime, 4, 'little')
         self.out_queue.put_nowait(Packet(glob.codes.client_headers.TIME_SYNC_RESP, out_data))
 
-    def parse_chat_message(self, data, gm):
+    @staticmethod
+    def parse_chat_message(data, gm):
         msg = ChatMessage()
         msg.channel = data.get(1)
         if msg.channel == glob.codes.chat_channels.GUILD_ACHIEVEMENT:
@@ -422,7 +424,8 @@ class GamePacketHandler(PacketHandler):
         data.get(2)  # null terminator + chat tag
         return msg
 
-    def parse_roster(self, data):
+    @staticmethod
+    def parse_roster(data):
         n_of_chars = data.get(4, 'little')
         roster = {}
         glob.guild.motd = utils.read_string(data)
@@ -446,7 +449,8 @@ class GamePacketHandler(PacketHandler):
             roster[char.guid] = char
         return roster
 
-    def handle_achievement_event(self, guid, achievement_id):
+    @staticmethod
+    def handle_achievement_event(guid, achievement_id):
         if not glob.guild:
             glob.logger.error('Received achievement event, but not in guild')
             return

@@ -1,6 +1,3 @@
-import asyncio
-import socket
-
 import PyByteBuffer
 
 from src.common.config import glob
@@ -17,28 +14,6 @@ class LogonConnector(WoWConnector):
 
     def get_handler(self):
         return LogonPacketHandler(self.out_queue)
-
-    async def run(self):
-        await self.out_queue.put(self.get_initial_packet())
-        glob.logger.info(f'Connecting to logon server: {glob.logon_info.address.name}')
-        try:
-            self.reader, self.writer = await asyncio.open_connection(glob.logon_info.address.host,
-                                                                     glob.logon_info.address.port)
-        except socket.gaierror:
-            glob.logger.error('Can\'t establish connection')
-            self.end()
-        self.tasks.append(asyncio.create_task(self.receiver_coro(), name='Game receiver'))
-        self.tasks.append(asyncio.create_task(self.sender_coro(), name='Game sender'))
-        self.tasks.append(asyncio.create_task(self.handler_coro(), name='Game handler'))
-        try:
-            await asyncio.gather(*self.tasks)
-        except asyncio.exceptions.CancelledError:
-            return
-
-    def handle_result(self, result):
-        match result:
-            case 1:
-                self.end()
 
     def get_initial_packet(self):
         version = [bytes(x, 'utf-8') for x in glob.logon_info.version.split('.')]

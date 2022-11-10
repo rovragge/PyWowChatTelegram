@@ -6,15 +6,64 @@ from src.connector.game import GameConnector
 from src.connector.disc import DiscordConnector
 
 
+async def logon_coro(in_queue, out_queue):
+    glob.logger.debug('Logon connector working')
+    while not in_queue.empty():
+        await in_queue.get()
+    while not out_queue.empty():
+        await out_queue.get()
+    connector = LogonConnector(in_queue, out_queue)
+    try:
+        await out_queue.put(connector.get_initial_packet())
+        await connector.run(glob.logon_info.address)
+    except asyncio.CancelledError:
+        return 0
+    except ConnectionAbortedError:
+        glob.logger.error('Logon discon')
+        return 1
+    except ConnectionRefusedError:
+        glob.logger.error('Logon refused')
+        return 1
+    except ValueError:
+        glob.logger.critical('Bad Logon SRP')
+        return 2
+    else:
+        glob.logger.critical('Logon coro exited without cancellation')
+        return 2
+
+
+async def game_coro(in_queue, out_queue, discord_queue):
+    glob.logger.debug('Game connector working')
+    connector = GameConnector(discord_queue, in_queue, out_queue)
+    try:
+        await connector.run(glob.realm.address)
+    except ConnectionAbortedError:
+        glob.logger.error('Game discon')
+        return 1
+    except ConnectionRefusedError:
+        glob.logger.error('Game refused')
+        return 1
+    else:
+        glob.logger.critical('Game coro exited without cancellation')
+        return 2
+
+
 async def wow_task(in_queue, out_queue, discord_queue):
     while True:
-        connector = LogonConnector(in_queue, out_queue)
-        await connector.run()
-        connector = GameConnector(discord_queue, in_queue, out_queue)
-        await connector.run()
-        glob.reset_crypt()
-        await asyncio.sleep(glob.reconnect_delay)
-        glob.logger.info('Reconnecting to WoW')
+        logon_task = asyncio.create_task(logon_coro(in_queue, out_queue), name='logon_task')
+        match await logon_task:
+            case 1:
+                await asyncio.sleep(glob.reconnect_delay)
+                continue
+            case 2:
+                raise RuntimeError
+        game_task = asyncio.create_task(game_coro(in_queue, out_queue, discord_queue), name='game_task')
+        match await game_task:
+            case 1:
+                await asyncio.sleep(glob.reconnect_delay)
+                glob.reset_crypt()
+            case 2:
+                raise RuntimeError
 
 
 async def discord_task(in_queue, out_queue):
@@ -27,7 +76,11 @@ async def main():
     in_queue = asyncio.Queue()
     out_queue = asyncio.Queue()
     discord_queue = asyncio.Queue()
-    await asyncio.gather(wow_task(in_queue, out_queue, discord_queue), discord_task(discord_queue, out_queue))
+    try:
+        await asyncio.gather(wow_task(in_queue, out_queue, discord_queue), discord_task(discord_queue, out_queue))
+    except RuntimeError:
+        glob.logger.critical('Runtime error')
+        exit(-1)
 
 
 if __name__ == '__main__':

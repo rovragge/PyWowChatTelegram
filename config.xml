@@ -25,7 +25,7 @@
         </channels>
     </discord>
     <wow>
-        <reconnect_delay>5</reconnect_delay>
+        <reconnect_delay>10</reconnect_delay>
         <platform>Win</platform>
         <locale>enUS</locale>
         <server_motd_enabled>1</server_motd_enabled>

@@ -1,4 +1,5 @@
-import asyncio
+import re
+
 import discord
 from discord.ext.commands import Bot
 from datetime import datetime

@@ -1,4 +1,3 @@
-import os
 import PyByteBuffer
 from src.common.utils import bytes_to_hex_str
 

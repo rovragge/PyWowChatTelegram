@@ -10,7 +10,7 @@ class DiscordConnector(Connector):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.bot = DiscordBot('.', out_queue=self.out_queue, status=discord.Status.online,
-                              intents=discord.Intents.default())
+                              intents=discord.Intents.all())
 
     def get_handler(self):
         return None

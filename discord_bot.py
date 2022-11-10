@@ -15,9 +15,6 @@ class DiscordBot(Bot):
     LINK_REGEXP = re.compile(r'(\|.+?\|)(Hitem|Hachievement|Hspell|Henchant):(\d*):?(.*?)\|h\[(.+?)]\|h\|r\s?')
 
     def __init__(self, *args, out_queue=None, **kwargs):
-        if not out_queue:
-            glob.logger.error('Out queue not specified for discord bot')
-            raise RuntimeError
         self.out_queue = out_queue
         self.target_channels = {x: [] for x in glob.maps}
         super().__init__(*args, **kwargs)
@@ -47,12 +44,26 @@ class DiscordBot(Bot):
         if message.author == self.user:
             return
         else:
-            if message.channel in glob.maps[glob.codes.chat_channels.GUILD]:
+            if message.channel.name == glob.maps[glob.codes.chat_channels.GUILD]:
                 msg = ChatMessage()
                 msg.channel = glob.codes.chat_channels.GUILD
                 msg.text = message.content
                 msg.language = glob.character.language
-                self.send_message_to_wow(msg)
+                await self.out_queue.put(Packet(glob.codes.client_headers.MESSAGECHAT, self.get_wow_chat_messgage(msg)))
+
+    def get_wow_chat_messgage(self, msg, targets=None):
+        buff = PyByteBuffer.ByteBuffer.allocate(8192)
+        buff.put(msg.channel, 4, 'little')
+        buff.put(msg.language, 4, 'little')
+        if targets:
+            for target in targets:
+                buff.put(bytes(target, 'utf-8'))
+                buff.put(0)
+        buff.put(bytes(msg.text, 'utf-8'))
+        buff.put(0)
+        buff.strip()
+        buff.rewind()
+        return buff.array()
 
     # --------- HANDLERS ---------
 
@@ -130,19 +141,6 @@ class DiscordBot(Bot):
             invites += f'{self.emoji_map[player.char_class]} {player.name} {invite.get_status_emoji()}\n\n'
         embed.add_field(name='Подписаны', value=invites[:-2] or 'Empty', inline=False)
         return embed
-
-    def send_message_to_wow(self, msg, target=None):
-        buff = PyByteBuffer.ByteBuffer.allocate(8192)
-        buff.put(msg.channel, 4, 'little')
-        buff.put(msg.language, 4, 'little')
-        if target:
-            buff.put(bytes(target, 'utf-8'))
-            buff.put(0)
-        buff.put(bytes(msg.text, 'utf-8'))
-        buff.put(0)
-        buff.strip()
-        buff.rewind()
-        self.out_queue.put_nowait(Packet(glob.codes.client_headers.MESSAGECHAT, buff.array()))
 
     async def handle_GUILD_EVENT(self, data):
         for channel in self.target_channels[glob.codes.chat_channels.GUILD]:

@@ -12,6 +12,7 @@ from src.common.commonclasses import Packet, ChatMessage
 class DiscordBot(Bot):
     FOOTER_URL = 'https://i.kym-cdn.com/photos/images/original/001/475/112/f36.jpg'
     ICC_URL = 'https://static.wikia.nocookie.net/wowpedia/images/f/fc/Icecrown_Citadel_loading_screen.jpg'
+    LINK_REGEXP = re.compile(r'(\|.+?\|)(Hitem|Hachievement|Hspell|Henchant):(\d*):?(.*?)\|h\[(.+?)]\|h\|r\s?')
 
     def __init__(self, *args, out_queue=None, **kwargs):
         if not out_queue:
@@ -79,10 +80,19 @@ class DiscordBot(Bot):
         await self.change_presence(status=discord.Status.online, activity=activity)
 
     async def handle_MESSAGE(self, data):
+
         for guild in self.guilds:
             channel = discord.utils.get(guild.channels, name=glob.maps[data.channel])
             if channel:
-                await channel.send(data.text)
+                await channel.send(f'[{data.author.name}]: {self.parse_links(data.text)}')
+
+    @staticmethod
+    def parse_links(text):
+        result = re.search(DiscordBot.LINK_REGEXP, text)
+        if result:
+            link = f'{glob.db}?{result[2][1:]}={result[3]}'
+            text = re.sub(DiscordBot.LINK_REGEXP, link, text)
+        return text
 
     async def handle_REMOVE_CALENDAR_EVENT(self, data):
         await data.delete()
@@ -136,4 +146,4 @@ class DiscordBot(Bot):
 
     async def handle_GUILD_EVENT(self, data):
         for channel in self.target_channels[glob.codes.chat_channels.GUILD]:
-            await channel.send(f'```{data}```')
+            await channel.send(f'`{data}`')

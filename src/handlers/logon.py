@@ -59,7 +59,7 @@ class LogonPacketHandler(PacketHandler):
             raise ValueError
         else:
             data.get(4)  # account flag
-            glob.logger.info(f'Successfully logged into realm server')
+            glob.logger.info(f'Successfully connected to logon server')
             packet = Packet(glob.codes.server_headers.REALM_LIST, int.to_bytes(0, 4, 'big'))
             self.out_queue.put_nowait(packet)
 

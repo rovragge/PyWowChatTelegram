@@ -7,7 +7,6 @@ from src.connector.disc import DiscordConnector
 
 
 async def logon_coro(in_queue, out_queue):
-    glob.logger.debug('Logon connector working')
     while not in_queue.empty():
         await in_queue.get()
     while not out_queue.empty():
@@ -33,7 +32,6 @@ async def logon_coro(in_queue, out_queue):
 
 
 async def game_coro(in_queue, out_queue, discord_queue):
-    glob.logger.debug('Game connector working')
     connector = GameConnector(discord_queue, in_queue, out_queue)
     try:
         await connector.run(glob.realm.address)

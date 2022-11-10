@@ -44,7 +44,7 @@ class WoWConnector(Connector):
         self.logon_finished = True
 
     async def run(self, address):
-        glob.logger.info(f'Connecting to server: {address.name}')
+        glob.logger.info(f'Connecting to server: { address.host}:{address.port}')
         try:
             self.reader, self.writer = await asyncio.open_connection(address.host, address.port)
         except socket.gaierror:
@@ -66,7 +66,6 @@ class WoWConnector(Connector):
         while True:
             data = await self.reader.read(WoWConnector.RECV_SIZE)
             if not data:
-                glob.logger.error('Received empty packet')
                 for task in asyncio.all_tasks():
                     if task in self.subtasks:
                         task.cancel()

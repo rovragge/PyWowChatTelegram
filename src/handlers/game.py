@@ -70,15 +70,12 @@ class GamePacketHandler(PacketHandler):
     def handle_AUTH_RESPONSE(self, data):
         code = data.get(1)
         if code == glob.codes.game_auth_results.OK:
-            glob.logger.info('Successfully logged into game server')
+            glob.logger.info('Successfully connected to game server')
             if not self.received_char_enum:
                 self.out_queue.put_nowait(Packet(glob.codes.client_headers.CHAR_ENUM, b''))
         else:
             glob.logger.error(glob.codes.logon_auth_results.get_str(code))
             return
-
-    def handle_WARDEN_DATA(self, data):
-        return
 
     def handle_CHAR_ENUM(self, data):
         if self.received_char_enum:
@@ -174,7 +171,7 @@ class GamePacketHandler(PacketHandler):
     def handle_NAME_QUERY(self, data):
         char = self.parse_name_query(data)
         glob.players[char.guid] = char
-        glob.logger.info(f'Updated info about player {char.name} {char.guid}')
+        glob.logger.debug(f'Updated info about player {char.name} {char.guid}')
         self.pending_players.remove(char.guid)
         messages = self.pending_messages.get(char.guid)
         if not messages:

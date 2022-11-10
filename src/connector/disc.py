@@ -16,12 +16,7 @@ class DiscordConnector(Connector):
         return None
 
     async def run(self):
-        self.receiver_task = asyncio.create_task(self.receiver_coro(), name='Discord receiver')
-        self.sender_task = asyncio.create_task(self.sender_coro(), name='Discord sender')
-        try:
-            await asyncio.gather(self.receiver_task, self.sender_task)
-        except asyncio.exceptions.CancelledError:
-            return
+        await asyncio.gather(self.receiver_coro(), self.sender_coro())
 
     async def receiver_coro(self):
         await self.bot.start(glob.token)
@@ -39,4 +34,4 @@ class DiscordConnector(Connector):
                 if not isinstance(packet, Packet):
                     glob.logger.error('Something other than packet in discord queue!')
                     continue
-                self.bot.handle_packet(packet)
+            await self.bot.handle_packet(packet)

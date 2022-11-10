@@ -57,7 +57,7 @@ class DiscordBot(Bot):
 
     # --------- HANDLERS ---------
 
-    def handle_packet(self, packet):
+    async def handle_packet(self, packet):
         handler_name = f'handle_{glob.codes.discord_headers.get_str(packet.id)}'
         if handler_name == 'Unknown':
             glob.logger.error(f'No header specified for code 0x{packet.id:03x}')
@@ -68,7 +68,7 @@ class DiscordBot(Bot):
             glob.logger.error(f'Unhandled discord header {packet.id}')
             return
         else:
-            asyncio.create_task(handler(packet.data), name=handler_name)
+            await handler(packet.data)
 
     async def handle_ACTIVITY_UPDATE(self, data):
         activity = discord.Activity(name=f'{data} members online', type=discord.ActivityType.watching)

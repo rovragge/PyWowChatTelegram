@@ -236,21 +236,21 @@ class GamePacketHandler(PacketHandler):
             return
         match event:
             case glob.codes.guild_events.SIGNED_ON:
-                msg = f'{messages[0]} has come online'
+                msg = f'[{messages[0]}] заходит в игру]'
             case glob.codes.guild_events.SIGNED_OFF:
-                msg = f'{messages[0]} has come offline'
+                msg = f'[{messages[0]}] выходит offline'
             case glob.codes.guild_events.JOINED:
-                msg = f'{messages[0]} has joined the guild'
+                msg = f'{messages[0]}] вступил в гильдию'
             case glob.codes.guild_events.LEFT:
-                msg = f'{messages[0]} has left the guild'
+                msg = f'[{messages[0]}] покинул гильдию'
             case glob.codes.guild_events.PROMOTED:
-                msg = f'{messages[0]} has promoted {messages[1]} to {messages[2]}'
+                msg = f'[{messages[0]}] повысил [{messages[1]}] до звания {messages[2]}'
             case glob.codes.guild_events.DEMOTED:
-                msg = f'{messages[0]} has demoted {messages[1]} to {messages[2]}'
+                msg = f'[{messages[0]}] понизил [{messages[1]}] до звания {messages[2]}'
             case glob.codes.guild_events.REMOVED:
-                msg = f'{messages[1]} has kicked {messages[0]} from the guild'
+                msg = f'[{messages[1]}] исключил [{messages[0]}] из гильдии'
             case glob.codes.guild_events.MOTD:
-                msg = f'Guild Message of the Day: {messages[0]}'
+                msg = f'Сообщение дня гильдии: {messages[0]}'
             case _:
                 glob.logger.error(f'Unknown guild event of type {event}')
                 return
@@ -515,12 +515,13 @@ class GamePacketHandler(PacketHandler):
             return
         data.get(4, 'little')  # old_time
         event.flags = data.get(4, 'little')
-        event.time = self.unpack_guid(data)
+        event.time = self.unpack_time(data)
         event.type = data.get(1)
         event.dungeon_id = data.get(4, 'little')
         event.title = utils.read_string(data)
         event.text = utils.read_string(data)
         data.get(9)  # is_repeatable + CALENDAR_MAX_INVITES + unk_time
+        self.discord_queue.put_nowait(Packet(glob.codes.discord_headers.UPDATE_CALENDAR_EVENT, event))
 
     def handle_CALENDAR_EVENT_INVITE(self):
         glob.logger.error('CALENDAR_EVENT_INVITE - not handled')

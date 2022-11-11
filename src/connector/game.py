@@ -23,6 +23,8 @@ class GameConnector(WoWConnector):
                 self.subtasks.append(asyncio.create_task(self.ping_coroutine(30, 30), name='ping'))
                 self.subtasks.append(asyncio.create_task(self.roster_update_coroutine(21, 21), name='roster_update'))
                 self.subtasks.append(asyncio.create_task(self.keep_alive_coroutine(5, 30), name='keep_alive'))
+                self.subtasks.append(
+                    asyncio.create_task(self.calendar_coroutine(30, 30), name='calendar'))
 
     async def ping_coroutine(self, initial_delay, delay):
         glob.logger.debug('Ping coroutine alive')
@@ -71,4 +73,21 @@ class GameConnector(WoWConnector):
                 await asyncio.sleep(delay)
             except asyncio.exceptions.CancelledError:
                 glob.logger.debug('Roster update coroutine canceled')
+                break
+
+    async def calendar_coroutine(self, initial_delay, delay):
+        glob.logger.debug('Calendar coroutine alive')
+        try:
+            await asyncio.sleep(initial_delay)
+        except asyncio.exceptions.CancelledError:
+            glob.logger.debug('Calendar coroutine canceled before first packet was sent')
+            return
+        while True:
+            try:
+                for event_id in glob.calendar.events:
+                    await self.out_queue.put(
+                        Packet(glob.codes.client_headers.CALENDAR_GET_EVENT, int.to_bytes(event_id, 8, 'little')))
+                await asyncio.sleep(delay)
+            except asyncio.exceptions.CancelledError:
+                glob.logger.debug('Calendar coroutine canceled')
                 break

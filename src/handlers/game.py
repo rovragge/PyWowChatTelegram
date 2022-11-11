@@ -238,9 +238,9 @@ class GamePacketHandler(PacketHandler):
             return
         match event:
             case glob.codes.guild_events.SIGNED_ON:
-                msg = f'[{messages[0]}] заходит в игру]'
+                msg = f'[{messages[0]}] заходит в игру'
             case glob.codes.guild_events.SIGNED_OFF:
-                msg = f'[{messages[0]}] выходит offline'
+                msg = f'[{messages[0]}] выходит из игры'
             case glob.codes.guild_events.JOINED:
                 msg = f'{messages[0]}] вступил в гильдию'
             case glob.codes.guild_events.LEFT:
@@ -342,9 +342,6 @@ class GamePacketHandler(PacketHandler):
         else:
             glob.logger.info(f'Info about player {glob.players[guid].name} removed')
 
-    def send_notification(self, message):
-        pass
-
     # ---------- Group ----------
     def handle_GROUP_INVITE(self, data):
         flag = data.get(1)
@@ -363,9 +360,6 @@ class GamePacketHandler(PacketHandler):
         if new_leader == glob.character.name:
             self.out_queue.put_nowait(Packet(glob.codes.client_headers.GROUP_RAID_CONVERT, b''))
             self.out_queue.put_nowait(Packet(glob.codes.client_headers.GROUP_DISBAND, b''))
-
-    def send_GROUP_SET_LEADER(self):
-        pass
 
     def handle_GROUP_DESTROYED(self, data):
         glob.logger.info('Party has been disbanded!')
@@ -523,7 +517,7 @@ class GamePacketHandler(PacketHandler):
         event.title = utils.read_string(data)
         event.text = utils.read_string(data)
         data.get(9)  # is_repeatable + CALENDAR_MAX_INVITES + unk_time
-        self.discord_queue.put_nowait(Packet(glob.codes.discord_headers.UPDATE_CALENDAR_EVENT, event))
+        self.discord_queue.put_nowait(Packet(glob.codes.discord_headers.ADD_CALENDAR_EVENT, event))
 
     def handle_CALENDAR_EVENT_INVITE(self, data):
         invite = CalendarInvite()

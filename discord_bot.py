@@ -27,7 +27,14 @@ class DiscordBot(Bot):
         280: 'https://static.wikia.nocookie.net/wowwiki/images/f/fc/Icecrown_Citadel_loading_screen.jpg',
         294: 'https://static.wikia.nocookie.net/wowwiki/images/c/c7/Ruby_Sanctum_loading_screen.jpg',
         227: 'https://static.wikia.nocookie.net/wowwiki/images/1/1f/Naxxramas_loading_screen.jpg',
-        257: 'https://static.wikia.nocookie.net/wowwiki/images/4/46/Onyxia%27s_Lair_loading_screen.jpg'}
+        237: 'https://static.wikia.nocookie.net/wowwiki/images/c/cb/Eye_of_Eternity_loading_screen.jpg',
+        238: 'https://static.wikia.nocookie.net/wowwiki/images/d/dd/Obsidian_Sanctum_loading_screen.jpg',
+        244: 'https://static.wikia.nocookie.net/wowwiki/images/7/73/Ulduar_loading_screen.jpg',
+        248: 'https://static.wikia.nocookie.net/wowwiki/images/5/56/Trial_of_the_Crusader_loading_screen.jpg',
+        257: 'https://static.wikia.nocookie.net/wowwiki/images/4/46/Onyxia%27s_Lair_loading_screen.jpg',
+        280: 'https://static.wikia.nocookie.net/wowwiki/images/f/fc/Icecrown_Citadel_loading_screen.jpg',
+        294: 'https://static.wikia.nocookie.net/wowwiki/images/c/c7/Ruby_Sanctum_loading_screen.jpg'
+    }
 
     def __init__(self, *args, out_queue=None, **kwargs):
         self.out_queue = out_queue

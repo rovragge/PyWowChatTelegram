@@ -150,11 +150,15 @@ class Calendar:
 class CalendarInvite:
     def __init__(self):
         self.guid = None
+        self.id = None
         self.event_id = None
         self.level = None
         self.status = None
+        self.status_time = None
         self.rank = None
         self.last_update_time = None
+        self.is_pre = False
+        self.is_signup = False
 
     def get_status_emoji(self):
         status_map = {0: '❓',
@@ -185,7 +189,7 @@ class CalendarEvent:
         self.flags = None
         self.dungeon_id = None
         self.creator_guid = None
-        self.invites = []
+        self.invites = {}
         self.embeds = []
 
     def is_guild_event(self):

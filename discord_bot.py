@@ -136,7 +136,9 @@ class DiscordBot(Bot):
         author = glob.players.get(event.invites[0].guid)
         embed.add_field(name='Создатель', value=f'{self.emoji_map[author.char_class]} {author.name}')
         invites = ''
-        for invite in event.invites[1:]:
+        for invite in event.invites.values():
+            if invite.guid == event.creator_guid:
+                continue
             player = glob.players.get(invite.guid)
             invites += f'{self.emoji_map[player.char_class]} {player.name} {invite.get_status_emoji()}\n\n'
         embed.add_field(name='Подписаны', value=invites[:-2] or 'Empty', inline=False)

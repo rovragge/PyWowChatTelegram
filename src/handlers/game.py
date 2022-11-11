@@ -523,9 +523,21 @@ class GamePacketHandler(PacketHandler):
         data.get(9)  # is_repeatable + CALENDAR_MAX_INVITES + unk_time
         self.discord_queue.put_nowait(Packet(glob.codes.discord_headers.UPDATE_CALENDAR_EVENT, event))
 
-    def handle_CALENDAR_EVENT_INVITE(self):
-        glob.logger.error('CALENDAR_EVENT_INVITE - not handled')
-
+    def handle_CALENDAR_EVENT_INVITE(self, data):
+        invite = CalendarInvite()
+        invite.guid = self.unpack_guid(data)
+        self.send_NAME_QUERY(invite.guid)
+        invite.event_id = data.get(8, 'little')
+        invite.id = data.get(8, 'little')
+        invite.level = data.get(1)
+        invite.status = data.get(1)
+        invite.is_pre = not bool(data.get(1))
+        if not invite.is_pre:
+            invite.status_time = self.unpack_time(data)
+        invite.is_signup = not bool(data.get(1))
+        event = glob.calendar.events.get(invite.event_id)
+        if event:
+            event.invites[invite.guid] = invite
     def handle_CALENDAR_EVENT_INVITE_ALERT(self, data):
         event_id = data.get(8, 'little')
         self.out_queue.put_nowait(
@@ -546,6 +558,7 @@ class GamePacketHandler(PacketHandler):
         event.time = self.unpack_time(data)
         data.get(4, 'little')  # unk_time
         event.guild_id = data.get(4, 'little')
+        event.invites = {}
         for _ in range(data.get(4, 'little')):
             invite = CalendarInvite()
             invite.event_id = event.id
@@ -557,8 +570,7 @@ class GamePacketHandler(PacketHandler):
             data.get(9)  # is_guild_event + 1st item in invite map
             data.get(4, 'little')  # last_update_time - has len=14?
             utils.read_string(data)
-            event.invites.append(invite)
-        glob.calendar.events[event.id] = event
+            event.invites[invite.guid] = invite
         self.discord_queue.put_nowait(Packet(glob.codes.discord_headers.ADD_CALENDAR_EVENT, event))
 
     @staticmethod

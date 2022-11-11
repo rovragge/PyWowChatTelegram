@@ -171,7 +171,12 @@ class CalendarInvite:
                       7: '❓',
                       8: '❓',
                       9: '🚫'}
-        return status_map.get(self.status)
+        return status_map.get(self.status) or '❓'
+
+    def __eq__(self, other):
+        return all((self.level == other.level,
+                    self.status == other.status,
+                    self.rank == other.rank))
 
     def __str__(self):
         return f'CalendarInvite:\n\t{self.guid = }\n\t{self.event_id = }\n\t{self.level = }\n\t{self.status = }\
@@ -191,6 +196,15 @@ class CalendarEvent:
         self.creator_guid = None
         self.invites = {}
         self.embeds = []
+
+    def __eq__(self, other):
+        return all((self.title == other.title,
+                    self.text == other.text,
+                    self.type == other.type,
+                    self.time == other.time,
+                    self.flags == other.flags,
+                    self.dungeon_id == other.dungeon_id,
+                    self.invites == other.invites))
 
     def is_guild_event(self):
         return self.flags == 1024  # TODO needs testing

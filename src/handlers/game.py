@@ -534,14 +534,28 @@ class GamePacketHandler(PacketHandler):
         event = glob.calendar.events.get(invite.event_id)
         if event:
             event.invites[invite.guid] = invite
+
     def handle_CALENDAR_EVENT_INVITE_ALERT(self, data):
         event_id = data.get(8, 'little')
         self.out_queue.put_nowait(
             Packet(glob.codes.client_headers.CALENDAR_GET_EVENT, int.to_bytes(event_id, 8, 'little')))
 
     def handle_CALENDAR_SEND_EVENT(self, data):
-        data.get(1)  # send type
+        event = self.parse_calendar_event(data)
+        for invite_id in event.invites:
+            self.send_NAME_QUERY(invite_id)
+        if event.id in glob.calendar.events:
+            if event != glob.calendar.events[event.id]:
+                event.embeds = glob.calendar.events[event.id].embeds
+                glob.calendar.events[event.id] = event
+                self.discord_queue.put_nowait(Packet(glob.codes.discord_headers.ADD_CALENDAR_EVENT, event))
+        else:
+            glob.calendar.events[event.id] = event
+            self.discord_queue.put_nowait(Packet(glob.codes.discord_headers.ADD_CALENDAR_EVENT, event))
+
+    def parse_calendar_event(self, data):
         event = CalendarEvent()
+        data.get(1)
         event.creator_guid = self.unpack_guid(data)
         event.id = data.get(8, 'little')
         event.title = utils.read_string(data)
@@ -559,7 +573,6 @@ class GamePacketHandler(PacketHandler):
             invite = CalendarInvite()
             invite.event_id = event.id
             invite.guid = self.unpack_guid(data)
-            self.send_NAME_QUERY(invite.guid)
             data.get(1)  # level
             invite.status = data.get(1)
             invite.rank = data.get(1)
@@ -567,7 +580,7 @@ class GamePacketHandler(PacketHandler):
             data.get(4, 'little')  # last_update_time - has len=14?
             utils.read_string(data)
             event.invites[invite.guid] = invite
-        self.discord_queue.put_nowait(Packet(glob.codes.discord_headers.ADD_CALENDAR_EVENT, event))
+        return event
 
     @staticmethod
     def unpack_guid(data):

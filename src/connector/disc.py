@@ -1,7 +1,7 @@
 import discord
 import asyncio
 from src.common.config import glob
-from discord_bot import DiscordBot
+from src.discord_bot import DiscordBot
 from src.connector.base import Connector
 from src.common.commonclasses import Packet
 

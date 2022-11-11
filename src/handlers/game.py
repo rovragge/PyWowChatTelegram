@@ -199,8 +199,10 @@ class GamePacketHandler(PacketHandler):
         char.char_class = data.get(1)
         return char
 
-    def send_NAME_QUERY(self, guid):
+    def send_NAME_QUERY(self, guid, update=False):
         if guid in self.pending_players:
+            return
+        if not update and glob.players.get(guid):
             return
         self.pending_players.add(guid)
         data = PyByteBuffer.ByteBuffer.allocate(8)
@@ -277,7 +279,7 @@ class GamePacketHandler(PacketHandler):
                     self.pending_messages[message.guid].append(message)
                 else:
                     self.pending_messages[message.guid] = [message]
-                    self.send_NAME_QUERY(message.guid)
+                    self.send_NAME_QUERY(message.guid, update=True)
             else:
                 # send message straight away
                 message.author = author

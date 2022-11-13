@@ -59,9 +59,11 @@ class PacketDecoder:
         saved_position = buff.position
         self.reset_position(saved_position, buff)
         if glob.codes.logon_auth_results.is_success(buff.get(1)):
-            return 31
+            packet_size = 31
         else:
-            return 1 if not buff.remaining else 3
+            packet_size = 1 if not buff.remaining else 3
+        self.reset_position(saved_position, buff)
+        return packet_size
 
     def get_realm_list_size(self, buff):
         if buff.remaining < 2:

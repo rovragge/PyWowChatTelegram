@@ -240,7 +240,7 @@ class WowData(ByteBuffer):
         return self.get(4, endianness)
 
     def get_big_int(self, endianness='little'):
-        return self.get(4, endianness)
+        return self.get(8, endianness)
 
     def read_string(self, size=None):
         btarr = bytearray()

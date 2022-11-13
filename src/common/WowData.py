@@ -168,6 +168,8 @@ class WowData(ByteBuffer):
         self.get(1)  # is_repeatable
         self.get(4, 'little')  # CALENDAR_MAX_INVITES
         event.dungeon_id = self.get(4, 'little')
+        if event.dungeon_id == 4294967295:
+            event.dungeon_id = -1
         event.flags = self.get(4, 'little')
         event.time = self.unpack_time()
         self.get(4, 'little')  # unk_time

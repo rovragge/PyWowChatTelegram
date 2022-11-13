@@ -33,6 +33,16 @@ class DiscordBot(Bot):
         280: 'https://static.wikia.nocookie.net/wowwiki/images/f/fc/Icecrown_Citadel_loading_screen.jpg',
         294: 'https://static.wikia.nocookie.net/wowwiki/images/c/c7/Ruby_Sanctum_loading_screen.jpg'
     }
+    STATUS_ICONS = {0: '❓',
+                    1: '✅',
+                    2: '🚫',
+                    3: '✅',
+                    4: '🚫',
+                    5: '❓',
+                    6: '✅',
+                    7: '❓',
+                    8: '❓',
+                    9: '🚫'}
 
     def __init__(self, *args, out_queue=None, **kwargs):
         self.out_queue = out_queue
@@ -153,7 +163,9 @@ class DiscordBot(Bot):
                 continue
             player = glob.players.get(invite.guid)
             if player:
-                invites += f'{DiscordBot.EMOJIS[player.char_class]} {player.name} {invite.get_status_emoji()}\n'
+                invites += f'{DiscordBot.EMOJIS.get(player.char_class)} ' \
+                           f'{player.name} ' \
+                           f'{DiscordBot.STATUS_ICONS.get(invite.status)}\n'
         embed.add_field(name='Подписаны', value=invites[:-1] or 'Empty', inline=True)
         return embed
 

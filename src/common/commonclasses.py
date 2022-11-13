@@ -170,19 +170,6 @@ class CalendarInvite:
         self.is_pre = False
         self.is_signup = False
 
-    def get_status_emoji(self):
-        status_map = {0: '❓',
-                      1: '✅',
-                      2: '🚫',
-                      3: '✅',
-                      4: '🚫',
-                      5: '❓',
-                      6: '✅',
-                      7: '❓',
-                      8: '❓',
-                      9: '🚫'}
-        return status_map.get(self.status) or '❓'
-
     def __eq__(self, other):
         return all((self.level == other.level,
                     self.status == other.status,

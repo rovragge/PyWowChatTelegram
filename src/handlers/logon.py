@@ -1,6 +1,5 @@
 import asyncio
 import hashlib
-from src.common.utils import read_string
 from src.common.commonclasses import Packet, Realm
 from src.common.config import glob
 from src.common.SRP import SRPHandler

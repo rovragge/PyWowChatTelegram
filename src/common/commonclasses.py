@@ -1,7 +1,3 @@
-import PyByteBuffer
-from src.common.utils import bytes_to_hex_str
-
-
 class ChatMessage:
     def __init__(self):
         self.guid = 0
@@ -27,13 +23,22 @@ class Packet:
         self.data = packet_data
 
     def __str__(self):
-        return f'{self.id:04X} - {bytes_to_hex_str(self.data)}'
+        return f'{self.id:04X} - {self._bytes_to_hex_str(self.data)}'
 
     def __repr__(self):
         return f'Packet({self.id:04X})'
 
-    def to_byte_buff(self):
-        return PyByteBuffer.ByteBuffer.wrap(self.data)
+    @staticmethod
+    def _bytes_to_hex_str(data, add_spaces=True, resolve_plain_text=False):
+        string = ''
+        for byte in data:
+            if resolve_plain_text and 32 <= byte < 127:
+                string += int.to_bytes(byte, 1, 'big').decode('utf-8')
+            else:
+                string += f'{byte:02X}'
+            if add_spaces:
+                string += ' '
+        return string.strip()
 
 
 class Character:

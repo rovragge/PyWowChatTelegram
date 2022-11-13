@@ -6,7 +6,7 @@ from src.common.WowData import WowData
 
 from src.common.config import glob
 
-from src.common.commonclasses import Packet, ChatMessage
+from src.common.commonclasses import Packet, ChatMessage, Guild
 from src.handlers.base import PacketHandler
 
 
@@ -31,12 +31,12 @@ class GamePacketHandler(PacketHandler):
         # ---------- Login Stuff ----------
 
     def handle_AUTH_CHALLENGE(self, data):
-        challenge = self.parse_auth_challenge(data)
+        challenge = self.get_auth_challenge(data)
         glob.crypt.initialize(glob.realm.session_key)
         self.out_queue.put_nowait(Packet(glob.codes.client_headers.AUTH_CHALLENGE, challenge))
 
     @staticmethod
-    def parse_auth_challenge(data):
+    def get_auth_challenge(data):
         buff = WowData.allocate(400)
         bin_account = bytes(glob.logon_info.account, 'utf-8')
 
@@ -73,7 +73,7 @@ class GamePacketHandler(PacketHandler):
                 self.out_queue.put_nowait(Packet(glob.codes.client_headers.CHAR_ENUM, b''))
         else:
             glob.logger.error(glob.codes.logon_auth_results.get_str(code))
-            return
+            raise ConnectionAbortedError
 
     def handle_CHAR_ENUM(self, data):
         if glob.character:
@@ -117,7 +117,7 @@ class GamePacketHandler(PacketHandler):
         data.get(4)
         glob.guild.name = data.read_string()
         glob.guild.ranks = []
-        for _ in range(10):
+        for _ in range(Guild.MAX_RANKS):
             rank = data.read_string()
             if rank:
                 glob.guild.ranks.append(rank)
@@ -147,8 +147,7 @@ class GamePacketHandler(PacketHandler):
     # ---------- Guild Events ----------
     def handle_GUILD_EVENT(self, data):
         event = data.get(1)
-        n_of_strings = data.get(1)
-        messages = [data.read_string() for _ in range(n_of_strings)]
+        messages = [data.read_string() for _ in range(data.get(1))]
         msg = self.generate_guild_event_message(event, messages)
         if msg:
             self.discord_queue.put_nowait(Packet(glob.codes.discord_headers.GUILD_EVENT, msg))
@@ -249,7 +248,7 @@ class GamePacketHandler(PacketHandler):
         glob.logger.info(f'Notification: {data.read_string()}')
 
     def handle_SERVER_MESSAGE(self, data):
-        tp = data.get(4, 'little')
+        tp = data.get_int()
         text = data.read_string()
         msg = ChatMessage()
         msg.channel = glob.codes.chat_channels.SYSTEM
@@ -268,7 +267,7 @@ class GamePacketHandler(PacketHandler):
         glob.logger.info(msg)
 
     def handle_INVALIDATE_PLAYER(self, data):
-        guid = data.get(8, 'little')
+        guid = data.get_big_int()
         try:
             del glob.players[guid]
         except KeyError:
@@ -299,10 +298,10 @@ class GamePacketHandler(PacketHandler):
         glob.logger.info('Party has been disbanded!')
 
     def handle_PARTY_COMMAND_RESULT(self, data):
-        operation = data.get(4, 'little')
+        operation = data.get_int()
         target = data.read_string()
-        result = data.get(4, 'little')
-        lfg_related = data.get(4)
+        result = data.get_int()
+        lfg_related = data.get_int()
         glob.logger.info(
             f'Party operation {operation}{(" on member " + target) if target else ""} resulted in {result}')
 
@@ -313,7 +312,7 @@ class GamePacketHandler(PacketHandler):
                 self.discord_queue.put_nowait(Packet(glob.codes.discord_headers.MESSAGE, message))
 
     def handle_TIME_SYNC_REQ(self, data):
-        counter = data.get(4, 'little')
+        counter = data.get_int()
         uptime = (time.time_ns() - self.connect_time) // 1000000
         out_data = int.to_bytes(counter, 4, 'little') + int.to_bytes(uptime, 4, 'little')
         self.out_queue.put_nowait(Packet(glob.codes.client_headers.TIME_SYNC_RESP, out_data))
@@ -333,18 +332,18 @@ class GamePacketHandler(PacketHandler):
         for event_id in data.get_calendar_event_ids():
             self.out_queue.put_nowait(
                 Packet(glob.codes.client_headers.CALENDAR_GET_EVENT, int.to_bytes(event_id, 8, 'little')))
-        glob.calendar.time = data.get(4, 'little')
+        glob.calendar.time = data.get_int()
         data.get(4)
-        for _ in range(data.get(4, 'little')):
+        for _ in range(data.get_int()):
             data.get(20)  # map_id(4) + .difficulty(4) + reset_time(4) + instance_id(8)
-        data.get(4, 'little')  # 1135753200 Constant date, unk (28.12.2005 07:00)
-        for _ in range(data.get(4, 'little')):
+        data.get_int()  # 1135753200 Constant date, unk (28.12.2005 07:00)
+        for _ in range(data.get_int()):
             data.get(12)  # map_id(4) + reset_time(4) + zero(4)
-        glob.calendar.holidays = [data.get_calendar_holiday() for _ in range(data.get(4, 'little'))]
+        glob.calendar.holidays = [data.get_calendar_holiday() for _ in range(data.get_int())]
 
     def handle_CALENDAR_EVENT_REMOVED_ALERT(self, data):
         data.get(1)
-        event_id = data.get(8, 'little')
+        event_id = data.get_big_int()
         data.unpack_time()  # time
         if event_id not in glob.calendar.events:
             glob.logger.error(f'Received  removal alert for {event_id} calendar event, but no such event recorded')
@@ -370,7 +369,7 @@ class GamePacketHandler(PacketHandler):
             glob.logger.error(f'Received direct invite for non-existing event {invite.event_id}')
 
     def handle_CALENDAR_EVENT_INVITE_ALERT(self, data):
-        event_id = data.get(8, 'little')
+        event_id = data.get_big_int()
         self.out_queue.put_nowait(
             Packet(glob.codes.client_headers.CALENDAR_GET_EVENT, int.to_bytes(event_id, 8, 'little')))
 

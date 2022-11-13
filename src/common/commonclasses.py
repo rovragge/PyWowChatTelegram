@@ -85,6 +85,8 @@ class CharacterAppearance:
 
 
 class Guild:
+    MAX_RANKS = 10
+
     def __init__(self):
         self.guid = None
         self.name = None

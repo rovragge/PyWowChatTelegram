@@ -360,32 +360,29 @@ class GamePacketHandler(PacketHandler):
         if event:
             self.discord_queue.put_nowait(Packet(glob.codes.discord_headers.ADD_CALENDAR_EVENT, event))
 
+    def handle_CALENDAR_EVENT_INVITE(self, data):
+        invite = data.get_calendar_direct_invite()
+        self.send_NAME_QUERY(invite.guid)
+        event = glob.calendar.events.get(invite.event_id)
+        if event:
+            event.invites[invite.guid] = invite
+        else:
+            glob.logger.error(f'Received direct invite for non-existing event {invite.event_id}')
 
-def handle_CALENDAR_EVENT_INVITE(self, data):
-    invite = data.get_calendar_direct_invite()
-    self.send_NAME_QUERY(invite.guid)
-    event = glob.calendar.events.get(invite.event_id)
-    if event:
-        event.invites[invite.guid] = invite
-    else:
-        glob.logger.error(f'Received direct invite for non-existing event {invite.event_id}')
+    def handle_CALENDAR_EVENT_INVITE_ALERT(self, data):
+        event_id = data.get(8, 'little')
+        self.out_queue.put_nowait(
+            Packet(glob.codes.client_headers.CALENDAR_GET_EVENT, int.to_bytes(event_id, 8, 'little')))
 
-
-def handle_CALENDAR_EVENT_INVITE_ALERT(self, data):
-    event_id = data.get(8, 'little')
-    self.out_queue.put_nowait(
-        Packet(glob.codes.client_headers.CALENDAR_GET_EVENT, int.to_bytes(event_id, 8, 'little')))
-
-
-def handle_CALENDAR_SEND_EVENT(self, data):
-    event = data.get_calendar_event(data)
-    for invite_id in event.invites:
-        self.send_NAME_QUERY(invite_id)
-    if event.id in glob.calendar.events:
-        if event != glob.calendar.events[event.id]:
-            event.embeds = glob.calendar.events[event.id].embeds
+    def handle_CALENDAR_SEND_EVENT(self, data):
+        event = data.get_calendar_event()
+        for invite_id in event.invites:
+            self.send_NAME_QUERY(invite_id)
+        if event.id in glob.calendar.events:
+            if event != glob.calendar.events[event.id]:
+                event.embeds = glob.calendar.events[event.id].embeds
+                glob.calendar.events[event.id] = event
+                self.discord_queue.put_nowait(Packet(glob.codes.discord_headers.ADD_CALENDAR_EVENT, event))
+        else:
             glob.calendar.events[event.id] = event
             self.discord_queue.put_nowait(Packet(glob.codes.discord_headers.ADD_CALENDAR_EVENT, event))
-    else:
-        glob.calendar.events[event.id] = event
-        self.discord_queue.put_nowait(Packet(glob.codes.discord_headers.ADD_CALENDAR_EVENT, event))

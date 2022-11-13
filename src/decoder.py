@@ -30,32 +30,45 @@ class PacketDecoder:
         if not self.packet_size:
             match self.packet_id:
                 case glob.codes.server_headers.AUTH_LOGON_CHALLENGE:
-                    if buff.remaining < 2:
-                        self.incomplete_packet = True
-                        self.remaining_data = buff.array()
-                        return
-                    saved_position = buff.position
-                    buff.get(1)
-                    self.packet_size = 118 if glob.codes.logon_auth_results.is_success(buff.get(1)) else 2
-                    self.reset_position(saved_position, buff)
+                    self.packet_size = self.get_challenge_size(buff)
                 case glob.codes.server_headers.AUTH_LOGON_PROOF:
-                    if buff.remaining < 1:
-                        self.incomplete_packet = True
-                        self.remaining_data = buff.array()
-                        return
-                    saved_position = buff.position
-                    if glob.codes.logon_auth_results.is_success(buff.get(1)):
-                        self.packet_size = 31
-                    else:
-                        self.packet_size = 1 if not buff.remaining else 3
-                    self.reset_position(saved_position, buff)
+                    self.packet_size = self.get_proof_size(buff)
                 case glob.codes.server_headers.REALM_LIST:
-                    if buff.remaining < 2:
-                        self.incomplete_packet = True
-                        self.remaining_data = buff.array()
-                        return None
-                    self.packet_size = buff.get(2, endianness='little')
-        return self.compose_packet(buff)
+                    self.packet_size = self.get_realm_list_size(buff)
+                case _:
+                    glob.logger.critical('Unknown logon header')
+                    raise ValueError
+        return None if not self.packet_size else self.compose_packet(buff)
+
+    def get_challenge_size(self, buff):
+        if buff.remaining < 2:
+            self.incomplete_packet = True
+            self.remaining_data = buff.array()
+            return
+        saved_position = buff.position
+        buff.get(1)
+        packet_size = 118 if glob.codes.logon_auth_results.is_success(buff.get(1)) else 2
+        self.reset_position(saved_position, buff)
+        return packet_size
+
+    def get_proof_size(self, buff):
+        if buff.remaining < 1:
+            self.incomplete_packet = True
+            self.remaining_data = buff.array()
+            return
+        saved_position = buff.position
+        self.reset_position(saved_position, buff)
+        if glob.codes.logon_auth_results.is_success(buff.get(1)):
+            return 31
+        else:
+            return 1 if not buff.remaining else 3
+
+    def get_realm_list_size(self, buff):
+        if buff.remaining < 2:
+            self.incomplete_packet = True
+            self.remaining_data = buff.array()
+            return
+        return buff.get(2, endianness='little')
 
     def compose_packet(self, buff):
         if self.packet_size > buff.remaining:

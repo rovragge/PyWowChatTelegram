@@ -8,21 +8,15 @@
     </logger>
     <discord>
         <db>https://wowroad.info/</db>
-        <enable_dot_commands>1</enable_dot_commands>
-        <dot_commands_whitelist>
-            <dot_command>server_info</dot_command>
-            <dot_command>lookup *</dot_command>
-        </dot_commands_whitelist>
-        <enable_commands_channels>0</enable_commands_channels>
-        <enable_tag_failed_notifications>1</enable_tag_failed_notifications>
         <channels>
             <say>say-channel</say>
             <guild>guild-chat</guild>
             <whisper>whisper-channel</whisper>
             <system>system-channel</system>
-            <officer></officer>
-            <yell></yell>
             <announcement>rt-channel</announcement>
+            <officer>officer-channel</officer>
+            <yell>yell-channel</yell>
+
         </channels>
     </discord>
     <wow>

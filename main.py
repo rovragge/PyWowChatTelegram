@@ -23,10 +23,15 @@ async def logon_coro(in_queue, out_queue):
     except ConnectionRefusedError:
         glob.logger.error('Logon refused')
         return 1
+    except ConnectionResetError:
+        glob.logger.error('Can\'t connect')
+        return 1
     except ValueError:
         glob.logger.critical('Bad Logon SRP')
+        connector.writer.close()
         return 2
     else:
+        connector.writer.close()
         glob.logger.critical('Logon coro exited without cancellation')
         return 2
 
@@ -42,6 +47,7 @@ async def game_coro(in_queue, out_queue, discord_queue):
         glob.logger.error('Game refused')
         return 1
     else:
+        connector.writer.close()
         glob.logger.critical('Game coro exited without cancellation')
         return 2
 

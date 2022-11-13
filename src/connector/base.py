@@ -4,7 +4,6 @@ import socket
 import PyByteBuffer
 
 from src.common.config import glob
-from src.encoder import PacketEncoder
 from src.decoder import PacketDecoder
 
 
@@ -40,11 +39,10 @@ class WoWConnector(Connector):
         self.subtasks = []
 
         self.decoder = PacketDecoder()
-        self.encoder = PacketEncoder()
         self.logon_finished = True
 
     async def run(self, address):
-        glob.logger.info(f'Connecting to server: { address.host}:{address.port}')
+        glob.logger.info(f'Connecting to server: {address.host}:{address.port}')
         try:
             self.reader, self.writer = await asyncio.open_connection(address.host, address.port)
         except socket.gaierror:
@@ -59,7 +57,7 @@ class WoWConnector(Connector):
     async def sender_coro(self):
         while True:
             packet = await self.out_queue.get()
-            self.writer.write(self.encoder.encode(packet, self.logon_finished))
+            self.writer.write(self._encode_packet(packet))
             await self.writer.drain()
 
     async def receiver_coro(self):
@@ -81,3 +79,15 @@ class WoWConnector(Connector):
                         break
                 else:
                     break
+
+    def _encode_packet(self, packet):
+        if not self.logon_finished:
+            size = 2 if packet.id > 255 else 1
+            return int.to_bytes(packet.id, size, 'big') + packet.data
+        unencrypted = packet.id == glob.codes.client_headers.AUTH_CHALLENGE
+        header_size = 4 if unencrypted else 6
+        btarr = bytearray()
+        btarr += int.to_bytes(len(packet.data) + header_size - 2, 2, 'big')
+        btarr += int.to_bytes(packet.id, 2, 'little')
+        header = btarr if unencrypted else glob.crypt.encrypt(btarr + bytearray(2))
+        return header + packet.data

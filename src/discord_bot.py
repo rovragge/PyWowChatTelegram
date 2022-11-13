@@ -105,7 +105,7 @@ class DiscordBot(Bot):
         for guild in self.guilds:
             channel = discord.utils.get(guild.channels, name=glob.maps[data.channel])
             if channel:
-                await channel.send(f'[{data.author.name}]: {self.parse_links(data.text)}')
+                await channel.send(f'[{data.author.name if data.author else "SYSTEM"}]: {self.parse_links(data.text)}')
 
     @staticmethod
     def parse_links(text):

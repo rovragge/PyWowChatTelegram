@@ -10,7 +10,7 @@ class LogonConnector(WoWConnector):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.srp_handler = None
-        self.logon_finished = False
+        self.logon_done = False
 
     def get_handler(self):
         return LogonPacketHandler(self.out_queue)

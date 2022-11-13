@@ -12,8 +12,8 @@ class PacketDecoder:
         self.remaining_data = None
         self.incomplete_packet = False
 
-    def decode(self, buff, is_game):
-        if not is_game:
+    def decode(self, buff, logon_done):
+        if not logon_done:
             return self.decode_logon(buff)
         if not self.packet_size and not self.packet_id:
             if buff.remaining < PacketDecoder.HEADER_LENGTH:

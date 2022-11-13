@@ -39,7 +39,7 @@ class WoWConnector(Connector):
         self.subtasks = []
 
         self.decoder = PacketDecoder()
-        self.logon_finished = True
+        self.logon_done = True
 
     async def run(self, address):
         glob.logger.info(f'Connecting to server: {address.host}:{address.port}')
@@ -72,7 +72,7 @@ class WoWConnector(Connector):
                 data = self.decoder.remaining_data + data
             buff = PyByteBuffer.ByteBuffer.wrap(data)  # While loop accesses same buffer each time
             while True:
-                packet = self.decoder.decode(buff, self.logon_finished)
+                packet = self.decoder.decode(buff, self.logon_done)
                 if packet:
                     await self.in_queue.put(packet)
                     if not self.decoder.incomplete_packet:
@@ -81,7 +81,7 @@ class WoWConnector(Connector):
                     break
 
     def _encode_packet(self, packet):
-        if not self.logon_finished:
+        if not self.logon_done:
             size = 2 if packet.id > 255 else 1
             return int.to_bytes(packet.id, size, 'big') + packet.data
         unencrypted = packet.id == glob.codes.client_headers.AUTH_CHALLENGE

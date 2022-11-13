@@ -1,5 +1,6 @@
 from src.common.config import glob
 from src.common.commonclasses import Packet
+from src.common.WowData import WowData
 
 
 class PacketDecoder:
@@ -44,7 +45,7 @@ class PacketDecoder:
                         return
                     saved_position = buff.position
                     if glob.codes.logon_auth_results.is_success(buff.get(1)):
-                        self.packet_size = 25 if glob.logon_info.expansion == 'Vanilla' else 31
+                        self.packet_size = 31
                     else:
                         self.packet_size = 1 if not buff.remaining else 3
                     self.reset_position(saved_position, buff)
@@ -61,14 +62,16 @@ class PacketDecoder:
             self.incomplete_packet = True
             self.remaining_data = buff.array()
             return
-        packet = Packet(self.packet_id, buff.array(self.packet_size) if self.packet_size else bytearray(1))
+        packet = Packet(self.packet_id,
+                        WowData(buff.array(self.packet_size)) if self.packet_size else WowData(bytearray(1)))
         self.incomplete_packet = bool(buff.remaining)
         self.remaining_data = None
         self.packet_size = None
         self.packet_id = None
         return packet
 
-    def parse_encrypted_header(self, buff):
+    @staticmethod
+    def parse_encrypted_header(buff):
         header = int.to_bytes(buff.get(PacketDecoder.HEADER_LENGTH), PacketDecoder.HEADER_LENGTH, 'big')
         decrypted = glob.crypt.decrypt(header)
 

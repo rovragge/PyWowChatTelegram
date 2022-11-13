@@ -16,4 +16,4 @@ class PacketHandler:
                 # glob.logger.debug(f'Code specified for {header}, but no handlers method found')
                 return
             else:
-                return handler(packet.to_byte_buff())
+                return handler(packet.data)

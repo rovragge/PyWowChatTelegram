@@ -91,6 +91,9 @@ class Guild:
     def __bool__(self):
         return self.guid is not None
 
+    def get_online(self):
+        return len([char for char in self.roster.values() if not char.last_logoff]) - 1
+
 
 class Address:
     def __init__(self):
@@ -212,14 +215,6 @@ class CalendarEvent:
     def __str__(self):
         return f'CalendarEvent:\n\t{self.id = }\n\t{self.title = }\n\t{self.time = }\n\t{self.flags = }\n\t\
 {self.dungeon_id = }\n\t{self.creator_guid = }\n\t{self.text = }\n\t{self.type = }\n\tinvites: {len(self.invites)}'
-
-
-class DungeonPersistentState:
-    def __init__(self):
-        self.map_id = None
-        self.difficulty = None
-        self.reset_time = None
-        self.instance_id = None
 
 
 class Holiday:

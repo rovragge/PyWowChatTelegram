@@ -2,7 +2,7 @@ import datetime
 from PyByteBuffer import ByteBuffer
 
 from src.common.config import glob
-from src.common.commonclasses import Character, ChatMessage, CalendarEvent, CalendarInvite, Holiday
+from src.common.commonclasses import Realm, Character, ChatMessage, CalendarEvent, CalendarInvite, Holiday
 
 
 class WowData(ByteBuffer):
@@ -12,6 +12,30 @@ class WowData(ByteBuffer):
         self.buffer = data
         self.position = 0
         self.remaining = len(data)
+
+    # ---------- Realm ----------
+    def get_realms(self):
+        self.get(4)
+        realms = [self._get_realm() for _ in range(self.get(2, 'little'))]
+        string = 'Available realms:' + ''.join(
+            [f'\n\t{realm.address.name} {"PvP" if realm.is_pvp else "PvE"} - {realm.address.host}:{realm.address.port}'
+             for realm in realms])
+        glob.logger.debug(string)
+        return realms
+
+    def _get_realm(self):
+        realm = Realm()
+        realm.is_pvp = bool(self.get(1))
+        realm.lock_flag = bool(self.get(1))
+        realm.flags = self.get(1)  # offline/recommended/for newbies
+        realm.address.name = self.read_string()
+        realm.address.parse(self.read_string())
+        realm.population = self.get(4)
+        realm.num_chars = self.get(1)
+        realm.timezone = self.get(1)
+        realm.id = self.get(1)
+        realm.build_info = self.get(5) if realm.flags & 0x04 == 0x04 else None
+        return realm
 
     # ---------- Chars ----------
     def get_queried_char(self):

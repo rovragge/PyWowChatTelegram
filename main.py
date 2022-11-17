@@ -28,12 +28,13 @@ async def logon_coro(in_queue, out_queue):
         return 1
     except ValueError:
         glob.logger.critical('Bad Logon SRP')
-        connector.writer.close()
         return 2
     else:
-        connector.writer.close()
         glob.logger.critical('Logon coro exited without cancellation')
         return 2
+    finally:
+        connector.writer.close()
+        await connector.writer.wait_closed()
 
 
 async def game_coro(in_queue, out_queue, discord_queue):
@@ -50,6 +51,10 @@ async def game_coro(in_queue, out_queue, discord_queue):
         connector.writer.close()
         glob.logger.critical('Game coro exited without cancellation')
         return 2
+    finally:
+        connector.writer.close()
+        await connector.writer.wait_closed()
+        glob.reset()
 
 
 async def wow_task(in_queue, out_queue, discord_queue):
@@ -65,7 +70,6 @@ async def wow_task(in_queue, out_queue, discord_queue):
         match await game_task:
             case 1:
                 await asyncio.sleep(glob.reconnect_delay)
-                glob.reset_crypt()
             case 2:
                 raise RuntimeError
 

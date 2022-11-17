@@ -19,14 +19,7 @@ class Globals:
 
         with open(os.path.join(os.path.dirname(sys.argv[0]), 'config.xml'), 'r', encoding='utf-8') as xml_file:
             xml_obj = lxml.objectify.fromstring(xml_file.read())
-
-        self.logon_info = LogonInfo()
-        self.character = Character(name=os.environ.get('WOW_CHAR'))
-        self.guild = Guild()
-        self.players = {}
-        self.calendar = Calendar()
-        self.realm = None
-
+        self.reset()
         self.logger = self.get_logger(xml_obj.logger)
         self.logon_info = self.get_logon_info(xml_obj)
         self.timezone = datetime.timezone(datetime.timedelta(hours=3), 'Moscow')
@@ -34,11 +27,7 @@ class Globals:
         self.db = str(xml_obj.discord.db)
         self.token = os.environ.get('DISCORD_TOKEN')
         self.server_MOTD_enabled = bool(xml_obj.wow.server_motd_enabled)
-
         self.codes = Codes()
-        self.crypt = None
-        self.reset_crypt()
-
         self.maps = {self.codes.chat_channels.get_from_str(x.tag.upper()): x for x in
                      xml_obj.discord.channels.getchildren()}
         self.guild_events = {self.codes.guild_events.get_from_str(e.tag.upper()): bool(e) for e in
@@ -70,12 +59,12 @@ class Globals:
 
     @staticmethod
     def get_logger(logger_cfg):
-        log = logging.getLogger(str(logger_cfg.name) if logger_cfg.name else 'app')
+        logger = logging.getLogger(str(logger_cfg.name) if logger_cfg.name else 'app')
         try:
             log_level = getattr(logging, str(logger_cfg.level).upper())
-            log.setLevel(log_level)
+            logger.setLevel(log_level)
         except ValueError or AttributeError:
-            log.setLevel(logging.DEBUG)
+            logger.setLevel(logging.DEBUG)
         handlers = []
         if logger_cfg.to_file:
             now = datetime.datetime.now()
@@ -87,10 +76,15 @@ class Globals:
         log_format = str(logger_cfg.format)
         for handler in handlers:
             handler.setFormatter(logging.Formatter(log_format))
-            log.addHandler(handler)
-        return log
+            logger.addHandler(handler)
+        return logger
 
-    def reset_crypt(self):
+    def reset(self):
+        self.character = Character(name=os.environ.get('WOW_CHAR'))
+        self.guild = Guild()
+        self.players = {}
+        self.calendar = Calendar()
+        self.realm = None
         self.crypt = GameHeaderCrypt()
 
 

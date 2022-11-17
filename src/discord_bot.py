@@ -4,7 +4,7 @@ import discord
 from discord.ext.commands import Bot
 from datetime import datetime
 
-import PyByteBuffer
+from src.common.WowData import WowData
 from src.common.config import glob
 from src.common.commonclasses import Packet, ChatMessage
 
@@ -69,10 +69,11 @@ class DiscordBot(Bot):
                 msg.channel = glob.codes.chat_channels.GUILD
                 msg.text = message.content
                 msg.language = glob.character.language
-                await self.out_queue.put(Packet(glob.codes.client_headers.MESSAGECHAT, self.get_wow_chat_messgage(msg)))
+                await self.out_queue.put(Packet(glob.codes.client_headers.MESSAGECHAT, self.get_wow_chat_message(msg)))
 
-    def get_wow_chat_messgage(self, msg, targets=None):
-        buff = PyByteBuffer.ByteBuffer.allocate(8192)
+    @staticmethod
+    def get_wow_chat_message(msg, targets=None):
+        buff = WowData.allocate(8192)
         buff.put(msg.channel, 4, 'little')
         buff.put(msg.language, 4, 'little')
         if targets:

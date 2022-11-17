@@ -15,7 +15,7 @@ class Globals:
 
     def __init__(self):
 
-        dotenv.load_dotenv('./params.env')
+        dotenv.load_dotenv('./.env')
 
         with open(os.path.join(os.path.dirname(sys.argv[0]), 'config.xml'), 'r', encoding='utf-8') as xml_file:
             xml_obj = lxml.objectify.fromstring(xml_file.read())

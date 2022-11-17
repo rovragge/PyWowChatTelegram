@@ -12,6 +12,7 @@ class GameConnector(WoWConnector):
     def __init__(self, discord_queue, *args, **kwargs):
         self.discord_queue = discord_queue
         self.discord_bot = None
+        self.pings_done = 0
         super().__init__(*args, **kwargs)
 
     def get_handler(self):
@@ -20,74 +21,47 @@ class GameConnector(WoWConnector):
     def handle_result(self, result):
         match result:
             case 2:  # World login verified
-                self.subtasks.append(asyncio.create_task(self.ping_coroutine(30, 30), name='ping'))
-                self.subtasks.append(asyncio.create_task(self.roster_update_coroutine(21, 21), name='roster_update'))
-                self.subtasks.append(asyncio.create_task(self.keep_alive_coroutine(5, 30), name='keep_alive'))
-                self.subtasks.append(
-                    asyncio.create_task(self.calendar_coroutine(30, 30), name='calendar'))
+                self.subtasks.append(asyncio.create_task(self.ping_coro(30, 30), name='ping'))
+                self.subtasks.append(asyncio.create_task(self.roster_update_coro(21, 21), name='roster_update'))
+                self.subtasks.append(asyncio.create_task(self.keep_alive_coro(5, 30), name='keep_alive'))
+                self.subtasks.append(asyncio.create_task(self.calendar_coro(30, 30), name='calendar'))
 
-    async def ping_coroutine(self, initial_delay, delay):
-        glob.logger.debug('Ping coroutine alive')
-        ping_id = 1
-        data = int.to_bytes(ping_id, 4, 'little') + int.to_bytes(random.randint(0, 50) + 50, 4, 'little')
-        try:
-            await asyncio.sleep(initial_delay)
-        except asyncio.exceptions.CancelledError:
-            glob.logger.debug('Ping coroutine canceled before first packet was sent')
-            return
-        while True:
+    @staticmethod
+    def worker(func):
+        async def wrapper(self, initial_delay, delay):
+            glob.logger.debug(f'{asyncio.current_task().get_name()} coro alive')
             try:
-                await self.out_queue.put(Packet(glob.codes.client_headers.PING, data))
-                glob.logger.debug(f'Sending ping message #{ping_id}')
-                ping_id += 1
-                await asyncio.sleep(delay)
+                await asyncio.sleep(initial_delay)
             except asyncio.exceptions.CancelledError:
-                glob.logger.debug('Ping coroutine canceled')
-                break
+                glob.logger.debug(f'{asyncio.current_task().get_name()} coro canceled before first packet was sent')
+                return
+            while True:
+                try:
+                    await func(self)
+                    await asyncio.sleep(delay)
+                except asyncio.exceptions.CancelledError:
+                    glob.logger.debug(f'{asyncio.current_task().get_name()} coroutine canceled')
+                    break
 
-    async def keep_alive_coroutine(self, initial_delay, delay):
-        glob.logger.debug('Keep alive coroutine alive')
-        try:
-            await asyncio.sleep(initial_delay)
-        except asyncio.exceptions.CancelledError:
-            glob.logger.error('Keep alive coroutine canceled before first packet was sent')
-            return
-        while True:
-            try:
-                await self.out_queue.put(Packet(glob.codes.client_headers.KEEP_ALIVE, b''))
-                await asyncio.sleep(delay)
-            except asyncio.exceptions.CancelledError:
-                glob.logger.debug('Keep alive coroutine canceled')
-                break
+        return wrapper
 
-    async def roster_update_coroutine(self, initial_delay, delay):
-        glob.logger.debug('Roster update coroutine alive')
-        try:
-            await asyncio.sleep(initial_delay)
-        except asyncio.exceptions.CancelledError:
-            glob.logger.debug('Roster update coroutine canceled before first packet was sent')
-            return
-        while True:
-            try:
-                self.handler.update_roster()
-                await asyncio.sleep(delay)
-            except asyncio.exceptions.CancelledError:
-                glob.logger.debug('Roster update coroutine canceled')
-                break
+    @worker
+    async def ping_coro(self):
+        self.pings_done += 1
+        data = int.to_bytes(self.pings_done, 4, 'little') + int.to_bytes(random.randint(0, 50) + 50, 4, 'little')
+        await self.out_queue.put(Packet(glob.codes.client_headers.PING, data))
+        glob.logger.debug(f'Sending ping message #{self.pings_done}')
 
-    async def calendar_coroutine(self, initial_delay, delay):
-        glob.logger.debug('Calendar coroutine alive')
-        try:
-            await asyncio.sleep(initial_delay)
-        except asyncio.exceptions.CancelledError:
-            glob.logger.debug('Calendar coroutine canceled before first packet was sent')
-            return
-        while True:
-            try:
-                for event_id in glob.calendar.events:
-                    await self.out_queue.put(
-                        Packet(glob.codes.client_headers.CALENDAR_GET_EVENT, int.to_bytes(event_id, 8, 'little')))
-                await asyncio.sleep(delay)
-            except asyncio.exceptions.CancelledError:
-                glob.logger.debug('Calendar coroutine canceled')
-                break
+    @worker
+    async def keep_alive_coro(self):
+        await self.out_queue.put(Packet(glob.codes.client_headers.KEEP_ALIVE, b''))
+
+    @worker
+    async def roster_update_coro(self):
+        self.handler.update_roster()
+
+    @worker
+    async def calendar_coro(self):
+        for event_id in glob.calendar.events:
+            await self.out_queue.put(
+                Packet(glob.codes.client_headers.CALENDAR_GET_EVENT, int.to_bytes(event_id, 8, 'little')))

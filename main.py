@@ -48,7 +48,6 @@ async def game_coro(in_queue, out_queue, discord_queue):
         glob.logger.error('Game refused')
         return 1
     else:
-        connector.writer.close()
         glob.logger.critical('Game coro exited without cancellation')
         return 2
     finally:

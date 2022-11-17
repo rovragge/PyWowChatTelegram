@@ -106,21 +106,14 @@ class CharRaces(CodeCollection):
     TAUREN = 0x06
     GNOME = 0x07
     TROLL = 0x08
-    GOBLIN = 0x09
     BLOODELF = 0x0A
     DRAENEI = 0x0B
-    WORGEN = 0x16
-    PANDAREN_NEUTRAL = 0x18
-    PANDAREN_ALLIANCE = 0x19
-    PANDAREN_HORDE = 0x1A
 
     @classmethod
     def get_language(cls, race):
         match race:
-            case cls.ORC | cls.UNDEAD | cls.TAUREN | cls.TROLL | cls.BLOODELF | cls.GOBLIN | cls.PANDAREN_HORDE:
+            case cls.ORC | cls.UNDEAD | cls.TAUREN | cls.TROLL | cls.BLOODELF:
                 return 0x01  # orcish
-            case cls.PANDAREN_NEUTRAL:
-                return 0x2A
             case _:
                 return 0x07  # common
 

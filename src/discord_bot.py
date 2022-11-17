@@ -112,7 +112,6 @@ class DiscordBot(Bot):
         await self.change_presence(status=discord.Status.online, activity=activity)
 
     async def handle_MESSAGE(self, data):
-
         for guild in self.guilds:
             channel = discord.utils.get(guild.channels, name=glob.maps[data.channel])
             if channel:
@@ -138,13 +137,11 @@ class DiscordBot(Bot):
                 embed = await channel.send(embed=new_embed)
                 data.embeds.append(embed)
 
-    @staticmethod
-    def generate_embed(event):
+    def generate_embed(self, event):
         embed = discord.Embed(title=event.title,
                               colour=discord.Colour.darker_grey(),
                               timestamp=datetime.now(glob.timezone),
                               description=f'`{event.time.strftime("%d/%m/%Y %H:%M")} МСК`')
-        # embed.set_image(url=DiscordBot.ICC_URL)
         image = DiscordBot.THUMBNAILS.get(event.dungeon_id)
         if not image:
             glob.logger.error(f'No thumbnail for dungeon {event.dungeon_id}')
@@ -157,18 +154,21 @@ class DiscordBot(Bot):
         if author:
             embed.add_field(name='Создатель', value=f'{DiscordBot.EMOJIS[author.char_class]} {author.name}')
         embed.add_field(name='Сообщение', value=event.text or 'Empty', inline=False)
+        embed.add_field(name='Подписаны', value=self.get_invites_string(event) or 'Empty', inline=True)
+        return embed
 
-        invites = ''
+    @staticmethod
+    def get_invites_string(event):
+        string = ''
         for invite in event.invites.values():
             if invite.guid == event.creator_guid:
                 continue
             player = glob.players.get(invite.guid)
             if player:
-                invites += f'{DiscordBot.EMOJIS.get(player.char_class)} ' \
-                           f'{player.name} ' \
-                           f'{DiscordBot.STATUS_ICONS.get(invite.status)}\n'
-        embed.add_field(name='Подписаны', value=invites[:-1] or 'Empty', inline=True)
-        return embed
+                string += f'{DiscordBot.EMOJIS.get(player.char_class)} ' \
+                          f'{player.name} ' \
+                          f'{DiscordBot.STATUS_ICONS.get(invite.status)}\n'
+        return string
 
     async def handle_GUILD_EVENT(self, data):
         for channel in self.target_channels[glob.codes.chat_channels.GUILD]:

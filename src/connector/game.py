@@ -41,7 +41,7 @@ class GameConnector(WoWConnector):
                     await asyncio.sleep(delay)
                 except asyncio.exceptions.CancelledError:
                     glob.logger.debug(f'{asyncio.current_task().get_name()} coroutine canceled')
-                    break
+                    return
 
         return wrapper
 

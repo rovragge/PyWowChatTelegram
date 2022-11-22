@@ -51,8 +51,9 @@ async def game_coro(in_queue, out_queue, discord_queue):
         glob.logger.critical('Game coro exited without cancellation')
         return 2
     finally:
-        connector.writer.close()
-        await connector.writer.wait_closed()
+        if connector.writer:
+            connector.writer.close()
+            await connector.writer.wait_closed()
         glob.reset()
 
 

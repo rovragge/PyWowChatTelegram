@@ -21,6 +21,8 @@ class GamePacketHandler(PacketHandler):
 
     def __init__(self, discord_queue, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.valid_names = ('Hermes', 'Ovid')
+        self.current_raid_mode = None
         self.connect_time = time.time_ns()
         self.discord_queue = discord_queue
         self.in_world = False
@@ -132,8 +134,7 @@ class GamePacketHandler(PacketHandler):
             return
         for message in messages:
             message.author = char
-            self.discord_queue.put_nowait(Packet(glob.codes.discord_headers.MESSAGE, message))
-            glob.logger.info(message)
+            self.process_message(message)
         del self.pending_messages[char.guid]
 
     def send_NAME_QUERY(self, guid, update=False):
@@ -198,26 +199,53 @@ class GamePacketHandler(PacketHandler):
         message = data.get_chat_message()
         if not message:
             return
-        if glob.maps.get(message.channel):
-            if message.channel == glob.codes.chat_channels.SYSTEM:
-                if message.text.startswith('|c'):
-                    message.text = message.text[10:]
-                message.text = message.text.replace('|r', '')
-                self.discord_queue.put_nowait(Packet(glob.codes.discord_headers.MESSAGE, message))
-                glob.logger.info(message)
-                return
-            author = glob.players.get(message.guid)
-            if not author:
-                if author in self.pending_messages:
-                    self.pending_messages[message.guid].append(message)
-                else:
-                    self.pending_messages[message.guid] = [message]
-                    self.send_NAME_QUERY(message.guid, update=True)
+        if not glob.maps.get(message.channel):
+            glob.logger.debug('Message from unhandled channel')
+            return
+        if message.channel == glob.codes.chat_channels.SYSTEM:
+            if message.text.startswith('|c'):
+                message.text = message.text[10:]
+            message.text = message.text.replace('|r', '')
+            self.process_message(message)
+            return
+        author = glob.players.get(message.guid)
+        if not author:
+            if author in self.pending_messages:
+                self.pending_messages[message.guid].append(message)
             else:
-                # send message straight away
-                message.author = author
-                self.discord_queue.put_nowait(Packet(glob.codes.discord_headers.MESSAGE, message))
-                glob.logger.info(message)
+                self.pending_messages[message.guid] = [message]
+                self.send_NAME_QUERY(message.guid, update=True)
+        else:
+            # send message straight away
+            message.author = author
+            self.process_message(message)
+
+    def process_message(self, message):
+        if message.text.startswith('!'):
+            self.process_command(message)
+            glob.logger.info(f'Processing command: {message.text}')
+        else:
+            self.discord_queue.put_nowait(Packet(glob.codes.discord_headers.MESSAGE, message))
+            glob.logger.info(message)
+
+    def process_command(self, message):
+        if message.author.guid not in glob.guild.roster:
+            glob.logger.debug('Command from someone')
+            return
+        match message.text[1:]:
+            case 'raid 10':
+                self.set_raid_difficulty(0)
+            case 'raid 25':
+                self.set_raid_difficulty(1)
+            case 'raid 10h':
+                self.set_raid_difficulty(2)
+            case 'raid 25h':
+                self.set_raid_difficulty(3)
+
+    def set_raid_difficulty(self, mode):
+        if self.current_raid_mode != mode:
+            self.out_queue.put_nowait(Packet(0x4EB, int.to_bytes(mode, 4, 'little')))
+            self.current_raid_mode = mode
 
     @staticmethod
     def handle_CHANNEL_NOTIFY(data):
@@ -279,8 +307,7 @@ class GamePacketHandler(PacketHandler):
     def handle_GROUP_INVITE(self, data):
         flag = data.get(1)
         name = data.read_string()
-        valid_names = ('Ovid', 'Hermes')
-        if name in valid_names:
+        if name in self.valid_names:
             glob.logger.info(f'Received group invite from {name}. Accepting')
             self.out_queue.put_nowait(Packet(glob.codes.client_headers.GROUP_ACCEPT, bytearray(4)))
         else:
@@ -292,7 +319,8 @@ class GamePacketHandler(PacketHandler):
         glob.logger.info(f'{new_leader} is the new leader')
         if new_leader == glob.character.name:
             self.out_queue.put_nowait(Packet(glob.codes.client_headers.GROUP_RAID_CONVERT, b''))
-            self.out_queue.put_nowait(Packet(glob.codes.client_headers.GROUP_DISBAND, b''))
+            self.out_queue.put_nowait(Packet(0x4EB, int.to_bytes(1, 4, 'little')))
+            self.out_queue.put_nowait(Packet(0x4EB, int.to_bytes(3, 4, 'little')))
 
     def handle_GROUP_DESTROYED(self, data):
         glob.logger.info('Party has been disbanded!')

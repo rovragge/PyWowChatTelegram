@@ -18,7 +18,11 @@ class DiscordConnector(Connector):
         await asyncio.gather(self.receiver_coro(), self.sender_coro())
 
     async def receiver_coro(self):
-        await self.bot.start(glob.token)
+        try:
+            await self.bot.start(glob.token)
+        except discord.errors.LoginFailure:
+            glob.logger.critical('Incorrect discord token')
+            raise ValueError
 
     async def sender_coro(self):
         while not self.bot.is_closed():

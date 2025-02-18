@@ -132,3 +132,4 @@ dmypy.json
 /wowchat_java
 /.idea
 /logs
+/data

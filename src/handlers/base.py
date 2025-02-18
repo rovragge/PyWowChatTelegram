@@ -7,9 +7,7 @@ class PacketHandler:
 
     def handle_packet(self, packet):
         header = glob.codes.server_headers.get_str(packet.id)
-        if header == 'Unknown':
-            glob.logger.debug(f'UNHANDLED PACKET: 0x{packet.id:03x}')
-        else:
+        if header != 'Unknown':
             try:
                 handler = getattr(self, f'handle_{header}')
             except AttributeError:

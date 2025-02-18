@@ -9,14 +9,13 @@ from src.handlers.game import GamePacketHandler
 
 class GameConnector(WoWConnector):
 
-    def __init__(self, discord_queue, *args, **kwargs):
-        self.discord_queue = discord_queue
-        self.discord_bot = None
+    def __init__(self, tg_queue, *args, **kwargs):
+        self.tg_queue = tg_queue
         self.pings_done = 0
         super().__init__(*args, **kwargs)
 
     def get_handler(self):
-        return GamePacketHandler(self.discord_queue, self.out_queue)
+        return GamePacketHandler(self.tg_queue, self.out_queue)
 
     def handle_result(self, result):
         match result:

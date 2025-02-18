@@ -122,7 +122,7 @@ class WowData(ByteBuffer):
             # TODO achievement handling
             return
         msg.language = self.get_int()
-        if msg.language == -1:  # addon messages
+        if msg.language == 0xFFFFFFFF:  # addon messages
             return
         msg.guid = self.get_big_int()
         if msg.channel != glob.codes.chat_channels.SYSTEM and msg.guid == glob.character.guid:
@@ -251,7 +251,7 @@ class WowData(ByteBuffer):
             btarr += int.to_bytes(byte, 1, 'big')
             if size and len(btarr) == size:
                 break
-        return btarr.decode('utf-8')
+        return btarr.decode('utf-8', errors='ignore')
 
     def unpack_guid(self):
         y = self.get(1)

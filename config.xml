@@ -6,7 +6,7 @@
         <to_stdout>1</to_stdout>
         <format>%(levelname)s: %(message)s</format>
     </logger>
-    <discord>
+    <telegram>
         <db>https://wowroad.info/</db>
         <channels>
             <say>say-channel</say>
@@ -16,9 +16,8 @@
             <announcement>rt-channel</announcement>
             <officer>officer-channel</officer>
             <yell>yell-channel</yell>
-
         </channels>
-    </discord>
+    </telegram>
     <wow>
         <reconnect_delay>10</reconnect_delay>
         <platform>Win</platform>

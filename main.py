@@ -1,9 +1,9 @@
 import asyncio
 
 from src.common.config import glob
-from src.connector.logon import LogonConnector
 from src.connector.game import GameConnector
-from src.connector.disc import DiscordConnector
+from src.connector.logon import LogonConnector
+from src.connector.tg import TelegramConnector
 
 
 async def logon_coro(in_queue, out_queue):
@@ -37,8 +37,8 @@ async def logon_coro(in_queue, out_queue):
         await connector.writer.wait_closed()
 
 
-async def game_coro(in_queue, out_queue, discord_queue):
-    connector = GameConnector(discord_queue, in_queue, out_queue)
+async def game_coro(in_queue, out_queue, tg_queue):
+    connector = GameConnector(tg_queue, in_queue, out_queue)
     try:
         await connector.run(glob.realm.address)
     except ConnectionAbortedError:
@@ -57,7 +57,7 @@ async def game_coro(in_queue, out_queue, discord_queue):
         glob.reset()
 
 
-async def wow_task(in_queue, out_queue, discord_queue):
+async def wow_task(in_queue, out_queue, tg_queue):
     while True:
         logon_task = asyncio.create_task(logon_coro(in_queue, out_queue), name='logon_task')
         match await logon_task:
@@ -66,7 +66,7 @@ async def wow_task(in_queue, out_queue, discord_queue):
                 continue
             case 2:
                 raise RuntimeError
-        game_task = asyncio.create_task(game_coro(in_queue, out_queue, discord_queue), name='game_task')
+        game_task = asyncio.create_task(game_coro(in_queue, out_queue, tg_queue), name='game_task')
         match await game_task:
             case 1:
                 await asyncio.sleep(glob.reconnect_delay)
@@ -74,8 +74,8 @@ async def wow_task(in_queue, out_queue, discord_queue):
                 raise RuntimeError
 
 
-async def discord_task(in_queue, out_queue):
-    connector = DiscordConnector(in_queue, out_queue)
+async def telegram_task(in_queue, out_queue):
+    connector = TelegramConnector(in_queue, out_queue)
     await connector.run()
 
 
@@ -83,9 +83,9 @@ async def main():
     glob.logger.info('Running PyWowChat')
     in_queue = asyncio.Queue()
     out_queue = asyncio.Queue()
-    discord_queue = asyncio.Queue()
+    tg_queue = asyncio.Queue()
     try:
-        await asyncio.gather(wow_task(in_queue, out_queue, discord_queue), discord_task(discord_queue, out_queue))
+        await asyncio.gather(wow_task(in_queue, out_queue, tg_queue), telegram_task(tg_queue, out_queue))
     except RuntimeError:
         glob.logger.critical('Runtime error')
         exit(-1)

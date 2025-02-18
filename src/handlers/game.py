@@ -19,12 +19,12 @@ class GamePacketHandler(PacketHandler):
                  b'\x92/Y\x95O\xe2\xa0\x82\xfb-\xaa\xdfs\x9c`Ih\x80\xd6\xdb\xe5\t\xfa\x13\xb8B\x01\xdd\xc41n1\x0b' \
                  b'\xca_{{\x1c>\x9e\xe1\x93\xc8\x8d'
 
-    def __init__(self, discord_queue, *args, **kwargs):
+    def __init__(self, tg_queue, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.valid_names = ('Hermes', 'Ovid')
         self.current_raid_mode = None
         self.connect_time = time.time_ns()
-        self.discord_queue = discord_queue
+        self.tg_queue = tg_queue
         self.in_world = False
         self.last_roster_update = None
         self.pending_players = set()
@@ -98,7 +98,7 @@ class GamePacketHandler(PacketHandler):
             return
         self.in_world = True
         glob.logger.info('Successfully joined the world')
-        self.discord_queue.put_nowait(Packet(glob.codes.discord_headers.PURGE_CALENDAR, None))
+        self.tg_queue.put_nowait(Packet(glob.codes.telegram_headers.PURGE_CALENDAR, None))
         self.out_queue.put_nowait(Packet(glob.codes.client_headers.CALENDAR_GET_CALENDAR, b''))
         if glob.character.guild_guid:
             self.out_queue.put_nowait(
@@ -113,7 +113,7 @@ class GamePacketHandler(PacketHandler):
 
     def handle_GUILD_ROSTER(self, data):
         glob.guild.roster = data.get_roster()
-        self.discord_queue.put_nowait(Packet(glob.codes.discord_headers.ACTIVITY_UPDATE, glob.guild.get_online()))
+        self.tg_queue.put_nowait(Packet(glob.codes.telegram_headers.ACTIVITY_UPDATE, glob.guild.get_online()))
 
     def handle_GUILD_QUERY(self, data):
         data.get(4)
@@ -151,7 +151,7 @@ class GamePacketHandler(PacketHandler):
         messages = [data.read_string() for _ in range(data.get(1))]
         msg = self.generate_guild_event_message(event, messages)
         if msg:
-            self.discord_queue.put_nowait(Packet(glob.codes.discord_headers.GUILD_EVENT, msg))
+            self.tg_queue.put_nowait(Packet(glob.codes.telegram_headers.GUILD_EVENT, msg))
         self.update_roster()
 
     @staticmethod
@@ -225,7 +225,7 @@ class GamePacketHandler(PacketHandler):
             self.process_command(message)
             glob.logger.info(f'Processing command: {message.text}')
         else:
-            self.discord_queue.put_nowait(Packet(glob.codes.discord_headers.MESSAGE, message))
+            self.tg_queue.put_nowait(Packet(glob.codes.telegram_headers.MESSAGE, message))
             glob.logger.info(message)
 
     def process_command(self, message):
@@ -337,7 +337,7 @@ class GamePacketHandler(PacketHandler):
         if glob.server_MOTD_enabled:
             messages = data.get_motd_messages()
             for message in messages:
-                self.discord_queue.put_nowait(Packet(glob.codes.discord_headers.MESSAGE, message))
+                self.tg_queue.put_nowait(Packet(glob.codes.telegram_headers.MESSAGE, message))
 
     def handle_TIME_SYNC_REQ(self, data):
         counter = data.get_int()
@@ -378,14 +378,14 @@ class GamePacketHandler(PacketHandler):
             return
         event = glob.calendar.events[event_id]
         for embed in event.embeds:
-            self.discord_queue.put_nowait(Packet(glob.codes.discord_headers.REMOVE_CALENDAR_EVENT, embed))
+            self.tg_queue.put_nowait(Packet(glob.codes.telegram_headers.REMOVE_CALENDAR_EVENT, embed))
         del glob.calendar.events[event_id]
         glob.logger.debug(f'Removed calendar event {event_id}')
 
     def handle_CALENDAR_EVENT_UPDATED_ALERT(self, data):
         event = data.get_calendar_event_update()
         if event:
-            self.discord_queue.put_nowait(Packet(glob.codes.discord_headers.ADD_CALENDAR_EVENT, event))
+            self.tg_queue.put_nowait(Packet(glob.codes.telegram_headers.ADD_CALENDAR_EVENT, event))
 
     def handle_CALENDAR_EVENT_INVITE(self, data):
         invite = data.get_calendar_direct_invite()
@@ -409,7 +409,7 @@ class GamePacketHandler(PacketHandler):
             if event != glob.calendar.events[event.id]:
                 event.embeds = glob.calendar.events[event.id].embeds
                 glob.calendar.events[event.id] = event
-                self.discord_queue.put_nowait(Packet(glob.codes.discord_headers.ADD_CALENDAR_EVENT, event))
+                self.tg_queue.put_nowait(Packet(glob.codes.telegram_headers.ADD_CALENDAR_EVENT, event))
         else:
             glob.calendar.events[event.id] = event
-            self.discord_queue.put_nowait(Packet(glob.codes.discord_headers.ADD_CALENDAR_EVENT, event))
+            self.tg_queue.put_nowait(Packet(glob.codes.telegram_headers.ADD_CALENDAR_EVENT, event))

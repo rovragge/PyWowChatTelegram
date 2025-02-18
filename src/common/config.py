@@ -24,12 +24,14 @@ class Globals:
         self.logon_info = self.get_logon_info(xml_obj)
         self.timezone = datetime.timezone(datetime.timedelta(hours=3), 'Moscow')
         self.reconnect_delay = int(xml_obj.wow.reconnect_delay)
-        self.db = str(xml_obj.discord.db)
-        self.token = os.environ.get('DISCORD_TOKEN')
+        self.db = str(xml_obj.telegram.db)
+        self.token = os.getenv('TG_TOKEN')
+        self.chat_id = os.getenv('TG_CHAT')
+        self.message_thread_id = os.getenv('TG_THREAD')
         self.server_MOTD_enabled = bool(xml_obj.wow.server_motd_enabled)
         self.codes = Codes()
         self.maps = {self.codes.chat_channels.get_from_str(x.tag.upper()): x for x in
-                     xml_obj.discord.channels.getchildren()}
+                     xml_obj.telegram.channels.getchildren()}
         self.guild_events = {self.codes.guild_events.get_from_str(e.tag.upper()): bool(e) for e in
                              xml_obj.guild_events.getchildren()}
 

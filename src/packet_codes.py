@@ -404,7 +404,7 @@ class ServerHeaders(CodeCollection):
     LEARNED_DANCE_MOVES = 0x455
 
 
-class DiscordHeaders(CodeCollection):
+class TelegramHeaders(CodeCollection):
     MESSAGE = 0x00
     ACTIVITY_UPDATE = 0x01
     GUILD_EVENT = 0x02
@@ -425,4 +425,4 @@ class Codes:
     servers_messages = ServerMessages
     chat_events = ChatEvents
     chat_channels = ChatChannels
-    discord_headers = DiscordHeaders
+    telegram_headers = TelegramHeaders

@@ -101,6 +101,9 @@ class Guild:
     def get_online(self):
         return len([char for char in self.roster.values() if not char.last_logoff]) - 1
 
+    def get_online_list(self):
+        return [char for char in self.roster.values() if not char.last_logoff]
+
 
 class Address:
     def __init__(self):

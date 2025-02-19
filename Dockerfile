@@ -1,13 +1,7 @@
 FROM python:3.12-slim
 
-# Установка зависимостей для сборки
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    libssl-dev \
-    libffi-dev \
-    libxml2-dev \
-    libxslt1-dev \
-    zlib1g-dev \
+# Устанавливаем минимальный набор для компиляции C++
+RUN apt-get update && apt-get install -y --no-install-recommends g++ \
     && rm -rf /var/lib/apt/lists/*
 
 # Задаём рабочую директорию

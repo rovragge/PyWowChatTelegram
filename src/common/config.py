@@ -1,3 +1,4 @@
+import csv
 import logging
 import os
 import datetime
@@ -34,6 +35,7 @@ class Globals:
                      xml_obj.telegram.channels.getchildren()}
         self.guild_events = {self.codes.guild_events.get_from_str(e.tag.upper()): bool(e) for e in
                              xml_obj.guild_events.getchildren()}
+        self.achievements = self.load_achievements()
 
         self.logger.debug('Config values:\n\t'
                           f'account = {self.logon_info.account}\n\t'
@@ -88,6 +90,25 @@ class Globals:
         self.calendar = Calendar()
         self.realm = None
         self.crypt = GameHeaderCrypt()
+
+    def load_achievements(self):
+        achievements = {}
+        csv_file_path = os.path.join(os.path.dirname(sys.argv[0]), 'achievements.csv')
+        try:
+            with open(csv_file_path, newline='', encoding='utf-8') as csvfile:
+                reader = csv.reader(csvfile)
+                # Пропускаем первую строку с заголовком
+                next(reader, None)
+                for row in reader:
+                    if not row:
+                        continue
+                    achievement_id = int(row[0].strip())
+                    russian_name = row[2].strip()
+                    achievements[achievement_id] = russian_name
+            self.logger.debug(f'Loaded {len(achievements)} achievements from CSV')
+        except Exception as e:
+            self.logger.error(f'Failed to parse achievements CSV {csv_file_path}: {e}')
+        return achievements
 
 
 glob = Globals()

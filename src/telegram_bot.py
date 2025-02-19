@@ -55,7 +55,8 @@ class TelegramBot:
         if update.effective_message.message_thread_id != int(self.message_thread_id):
             return
 
-        nickname = self.db.get_nickname(update.effective_user.id) or update.effective_user.username or update.effective_user.first_name
+        nickname = self.db.get_nickname(
+            update.effective_user.id) or update.effective_user.username or update.effective_user.first_name
         full_message = f'<{nickname}> {update.effective_message.text}'
 
         max_length = 116
@@ -72,7 +73,8 @@ class TelegramBot:
 
     # Обработчик команды /start
     async def handle_start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        glob.logger.info(f"Handle /start command from {update.effective_user.username or update.effective_user.first_name}")
+        glob.logger.info(
+            f"Handle /start command from {update.effective_user.username or update.effective_user.first_name}")
         message = (
             "Привет! Я бот гильдии и переношу сообщения между WoW и Telegram.\n\n"
             "Доступные команды:\n"
@@ -85,7 +87,8 @@ class TelegramBot:
 
     # Обработчик команды /online
     async def handle_online(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        glob.logger.info(f"Handle /online command from {update.effective_user.username or update.effective_user.first_name}")
+        glob.logger.info(
+            f"Handle /online command from {update.effective_user.username or update.effective_user.first_name}")
         online_players = glob.guild.get_online_list()  # Получаем список онлайн-игроков
         if online_players:
             online_names = ", ".join(char.name for char in online_players)  # Преобразуем список Character в строку
@@ -95,7 +98,8 @@ class TelegramBot:
         await update.message.reply_text(response)
 
     async def handle_setnick(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        glob.logger.info(f"Handle /setnick command from {update.effective_user.username or update.effective_user.first_name}")
+        glob.logger.info(
+            f"Handle /setnick command from {update.effective_user.username or update.effective_user.first_name}")
         if update.effective_message is None:
             return
         if not context.args:
@@ -128,17 +132,26 @@ class TelegramBot:
 
         if data.channel == glob.codes.chat_channels.GUILD:
             message_text = f"<{data.author.name}>: {self.parse_links(data.text)}"
-        elif data.channel == glob.codes.chat_channels.GUILD_ACHIEVEMENT:
-            message_text = f"{data.author.name} получил достижение {glob.db}?achievement={data.achievement_id}"
-        else:
-            message_text = None
-
-        if message_text:
             await self.application.bot.send_message(
                 chat_id=self.chat_id,
                 message_thread_id=self.message_thread_id,
                 text=message_text,
                 disable_notification=True
+            )
+        elif data.channel == glob.codes.chat_channels.GUILD_ACHIEVEMENT:
+            achievement_name = glob.achievements.get(data.achievement_id, "Неизвестно")
+            achievement_name_escaped = self.escape_markdown(f"[{achievement_name}]")
+            message_text = (
+                f"{data.author.name} получил достижение "
+                f"[{achievement_name_escaped}]"
+                f"({glob.db}?achievement={data.achievement_id})"
+            )
+            await self.application.bot.send_message(
+                chat_id=self.chat_id,
+                message_thread_id=self.message_thread_id,
+                text=message_text,
+                disable_notification=True,
+                parse_mode='MarkdownV2'
             )
 
     async def handle_ADD_CALENDAR_EVENT(self, data):
@@ -180,3 +193,10 @@ class TelegramBot:
         buff.strip()
         buff.rewind()
         return buff.array()
+
+    @staticmethod
+    def escape_markdown(text: str) -> str:
+        escape_chars = r'\_*[]()~`>#+-=|{}.!'
+        for char in escape_chars:
+            text = text.replace(char, f'\\{char}')
+        return text

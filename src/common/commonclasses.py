@@ -6,6 +6,7 @@ class ChatMessage:
         self.language = None
         self.text = None
         self.channel_name = None
+        self.achievement_id = None
 
     def __str__(self):
         if self.guid and not self.author:

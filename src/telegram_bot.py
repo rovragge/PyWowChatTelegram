@@ -121,18 +121,25 @@ class TelegramBot:
         await handler(packet.data)
 
     async def handle_MESSAGE(self, data):
-        # Отправка сообщения в чат для канала GUILD
+        # Игнорируем системные сообщения
         if data.author.name is None:
             glob.logger.debug(f"Ignore SYSTEM message: {data.text}")
             return
-        if data.channel != glob.codes.chat_channels.GUILD:
-            glob.logger.debug(f"Ignore not GUILD message: {data.text}")
-            return
-        message_text = f"<{data.author.name}>: {self.parse_links(data.text)}"
-        await self.application.bot.send_message(chat_id=self.chat_id,
-                                                message_thread_id=self.message_thread_id,
-                                                text=message_text,
-                                                disable_notification=True)
+
+        if data.channel == glob.codes.chat_channels.GUILD:
+            message_text = f"<{data.author.name}>: {self.parse_links(data.text)}"
+        elif data.channel == glob.codes.chat_channels.GUILD_ACHIEVEMENT:
+            message_text = f"{data.author.name} получил достижение {glob.db}?achievement={data.achievement_id}"
+        else:
+            message_text = None
+
+        if message_text:
+            await self.application.bot.send_message(
+                chat_id=self.chat_id,
+                message_thread_id=self.message_thread_id,
+                text=message_text,
+                disable_notification=True
+            )
 
     async def handle_ADD_CALENDAR_EVENT(self, data):
         glob.logger.info(f"ADD_CALENDAR_EVENT: {data}")

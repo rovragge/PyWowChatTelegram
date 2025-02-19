@@ -117,22 +117,31 @@ class WowData(ByteBuffer):
     # ---------- Messages ----------
     def get_chat_message(self):
         msg = ChatMessage()
+        # Read the channel/message type
         msg.channel = self.get(1)
-        if msg.channel == glob.codes.chat_channels.GUILD_ACHIEVEMENT:
-            # TODO achievement handling
-            return
+        # Read language (4 bytes, little-endian)
         msg.language = self.get_int()
-        if msg.language == 0xFFFFFFFF:  # addon messages
-            return
+        if msg.language == 0xFFFFFFFF:  # Ignore addon messages
+            return None
+        # Read sender's GUID (8 bytes)
         msg.guid = self.get_big_int()
+        # Ignore if it's not a system message and the message is from the player themselves
         if msg.channel != glob.codes.chat_channels.SYSTEM and msg.guid == glob.character.guid:
-            return
+            return None
+        # Skip 4 service bytes
         self.get(4)
+        # If message type is CHANNEL, read the channel name
         msg.channel_name = self.read_string() if msg.channel == glob.codes.chat_channels.CHANNEL else None
-        # TODO Check if channel is handled or is an achievement message
-        self.get_big_int()  # guid
-        msg.text = self.read_string(size=self.get_int() - 1)
-        self.get(2)  # null terminator + chat tag
+        # Skip repeated GUID (8 bytes)
+        self.get_big_int()
+        # Read text length (4 bytes) and the actual text (txt_len - 1 bytes to exclude the null terminator)
+        txt_len = self.get_int()
+        msg.text = self.read_string(size=txt_len - 1)
+        # Skip 2 bytes: null terminator and chat tag
+        self.get(2)
+        # If the message is related to guild achievements, read achievement_id (4 bytes)
+        if msg.channel == glob.codes.chat_channels.GUILD_ACHIEVEMENT:
+            msg.achievement_id = self.get_int()  # Achievement ID (little-endian by default)
         return msg
 
     def get_motd_messages(self):

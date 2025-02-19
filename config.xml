@@ -7,15 +7,10 @@
         <format>%(levelname)s: %(message)s</format>
     </logger>
     <telegram>
-        <db>https://wowroad.info/</db>
+        <db>https://wowroad.info</db>
         <channels>
-            <say>say-channel</say>
             <guild>guild-chat</guild>
-            <whisper>whisper-channel</whisper>
-            <system>system-channel</system>
-            <announcement>rt-channel</announcement>
-            <officer>officer-channel</officer>
-            <yell>yell-channel</yell>
+            <guild_achievement>guild-achievement</guild_achievement>
         </channels>
     </telegram>
     <wow>

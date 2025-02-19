@@ -138,7 +138,7 @@ class TelegramBot:
             achievement_name = glob.achievements.get(data.achievement_id, "Неизвестно")
             achievement_name_escaped = self.escape_markdown(f"[{achievement_name}]")
             message_text = (
-                f"{data.author.name} получил достижение "
+                f"*{data.author.name}* получил достижение "
                 f"[{achievement_name_escaped}]"
                 f"({glob.db}?achievement={data.achievement_id})"
             )

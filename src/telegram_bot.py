@@ -131,13 +131,9 @@ class TelegramBot:
             return
 
         if data.channel == glob.codes.chat_channels.GUILD:
-            message_text = f"<{data.author.name}>: {self.parse_links(data.text)}"
-            await self.application.bot.send_message(
-                chat_id=self.chat_id,
-                message_thread_id=self.message_thread_id,
-                text=message_text,
-                disable_notification=True
-            )
+            escaped_author = self.escape_markdown(f"<{data.author.name}>")
+            escaped_text = self.parse_links_and_escape_markdown(data.text)
+            message_text = f"{escaped_author}: {escaped_text}"
         elif data.channel == glob.codes.chat_channels.GUILD_ACHIEVEMENT:
             achievement_name = glob.achievements.get(data.achievement_id, "Неизвестно")
             achievement_name_escaped = self.escape_markdown(f"[{achievement_name}]")
@@ -146,6 +142,10 @@ class TelegramBot:
                 f"[{achievement_name_escaped}]"
                 f"({glob.db}?achievement={data.achievement_id})"
             )
+        else:
+            message_text = None
+
+        if message_text:
             await self.application.bot.send_message(
                 chat_id=self.chat_id,
                 message_thread_id=self.message_thread_id,
@@ -166,18 +166,36 @@ class TelegramBot:
     async def handle_GUILD_EVENT(self, data):
         pass
 
-    @staticmethod
-    def parse_links(text):
-        # Функция-заменитель для re.sub
-        def repl(match):
-            link_text = match.group("text")  # текст ссылки, например, "Моя любовь подобна алой розе"
-            link_type = match.group("type")  # тип ссылки, например, "quest" или "achievement"
-            obj_id = match.group("id")  # ID объекта, например, "1703"
-            # Формируем Markdown-ссылку: [текст](ссылка)
-            return f'[{link_text}]({glob.db}?{link_type}={obj_id})'
+    def parse_links_and_escape_markdown(self, text: str) -> str:
+        """
+        Находит в тексте ссылки по шаблону, экранирует части, не являющиеся ссылками,
+        а для найденных ссылок экранирует только видимый текст.
+        """
+        result = []
+        last_index = 0
 
-        # Заменяем все вхождения ссылки с помощью re.sub
-        return re.sub(TelegramBot.LINK_PATTERN, repl, text)
+        # Ищем все вхождения по шаблону ссылки
+        for match in re.finditer(self.LINK_PATTERN, text):
+            start, end = match.span()
+            # Экранируем текст до ссылки
+            non_link_text = text[last_index:start]
+            result.append(self.escape_markdown(non_link_text))
+
+            # Получаем данные ссылки
+            link_text = match.group("text")  # видимый текст ссылки
+            link_type = match.group("type")
+            obj_id = match.group("id")
+            # Экранируем видимый текст ссылки (но НЕ квадратные скобки, которые формируют разметку)
+            escaped_link_text = self.escape_markdown(f"[{link_text}]")
+            # Формируем Markdown-ссылку – здесь сами символы разметки не экранируются
+            link = f"[{escaped_link_text}]({glob.db}?{link_type}={obj_id})"
+            result.append(link)
+
+            last_index = end
+
+        # Экранируем остаток текста после последней ссылки
+        result.append(self.escape_markdown(text[last_index:]))
+        return "".join(result)
 
     @staticmethod
     def get_wow_chat_message(msg, targets=None):

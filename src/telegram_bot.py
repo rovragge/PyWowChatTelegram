@@ -133,7 +133,7 @@ class TelegramBot:
         if data.channel == glob.codes.chat_channels.GUILD:
             escaped_author = self.escape_markdown(f"<{data.author.name}>")
             escaped_text = self.parse_links_and_escape_markdown(data.text)
-            message_text = f"__{escaped_author}__: {escaped_text}"
+            message_text = f"*{escaped_author}* {escaped_text}"
         elif data.channel == glob.codes.chat_channels.GUILD_ACHIEVEMENT:
             achievement_name = glob.achievements.get(data.achievement_id, "Неизвестно")
             achievement_name_escaped = self.escape_markdown(f"[{achievement_name}]")

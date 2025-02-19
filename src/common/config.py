@@ -97,13 +97,11 @@ class Globals:
         try:
             with open(csv_file_path, newline='', encoding='utf-8') as csvfile:
                 reader = csv.reader(csvfile)
-                # Пропускаем первую строку с заголовком
-                next(reader, None)
                 for row in reader:
                     if not row:
                         continue
                     achievement_id = int(row[0].strip())
-                    russian_name = row[2].strip()
+                    russian_name = row[1].strip()
                     achievements[achievement_id] = russian_name
             self.logger.debug(f'Loaded {len(achievements)} achievements from CSV')
         except Exception as e:

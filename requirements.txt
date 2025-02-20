@@ -3,3 +3,4 @@ Arc4
 python-dotenv
 lxml
 python-telegram-bot
+emoji

@@ -56,8 +56,9 @@ class TelegramBot:
         if update.effective_message.message_thread_id != int(self.message_thread_id):
             return
 
-        nickname = self.db.get_nickname(
-            update.effective_user.id) or update.effective_user.username or update.effective_user.first_name
+        nickname = (self.db.get_nickname(update.effective_user.id)
+                    or update.effective_user.username
+                    or update.effective_user.first_name)
         demojized_text = emoji.demojize(update.effective_message.text, language='ru')
         full_message = f'<{nickname}> {demojized_text}'
 
@@ -127,11 +128,6 @@ class TelegramBot:
         await handler(packet.data)
 
     async def handle_MESSAGE(self, data):
-        # Игнорируем системные сообщения
-        if data.author.name is None:
-            glob.logger.debug(f"Ignore SYSTEM message: {data.text}")
-            return
-
         if data.channel == glob.codes.chat_channels.GUILD:
             escaped_author = self.escape_markdown(f"<{data.author.name}>")
             escaped_text = self.parse_links_and_escape_markdown(data.text)

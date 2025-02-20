@@ -58,7 +58,8 @@ class TelegramBot:
 
         nickname = self.db.get_nickname(
             update.effective_user.id) or update.effective_user.username or update.effective_user.first_name
-        full_message = f'<{nickname}> {update.effective_message.text}'
+        demojized_text = emoji.demojize(update.effective_message.text, language='ru')
+        full_message = f'<{nickname}> {demojized_text}'
 
         max_length = 116
         # Разбиваем полное сообщение на части длиной max_length символов
@@ -133,8 +134,7 @@ class TelegramBot:
 
         if data.channel == glob.codes.chat_channels.GUILD:
             escaped_author = self.escape_markdown(f"<{data.author.name}>")
-            demojize_text = emoji.demojize(data.text, language='ru')
-            escaped_text = self.parse_links_and_escape_markdown(demojize_text)
+            escaped_text = self.parse_links_and_escape_markdown(data.text)
             message_text = f"*{escaped_author}* {escaped_text}"
         elif data.channel == glob.codes.chat_channels.GUILD_ACHIEVEMENT:
             achievement_name = glob.achievements.get(data.achievement_id, "Неизвестно")

@@ -162,7 +162,12 @@ class TelegramBot:
         pass
 
     async def handle_GUILD_EVENT(self, data):
-        pass
+        await self.application.bot.send_message(
+            chat_id=self.chat_id,
+            message_thread_id=self.message_thread_id,
+            text=data,
+            disable_notification=True
+        )
 
     def parse_links_and_escape_markdown(self, text: str) -> str:
         """

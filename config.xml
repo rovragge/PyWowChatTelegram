@@ -21,13 +21,13 @@
         <version>3.3.5</version>
     </wow>
     <guild_events>
-        <signed_on>1</signed_on>
-        <signed_off>1</signed_off>
-        <promoted>1</promoted>
-        <demoted>1</demoted>
+        <signed_on>0</signed_on>
+        <signed_off>0</signed_off>
+        <promoted>0</promoted>
+        <demoted>0</demoted>
         <joined>1</joined>
         <left>1</left>
         <removed>1</removed>
-        <motd>1</motd>
+        <motd>0</motd>
     </guild_events>
 </config>

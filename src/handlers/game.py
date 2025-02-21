@@ -169,19 +169,19 @@ class GamePacketHandler(PacketHandler):
             return
         match event:
             case glob.codes.guild_events.SIGNED_ON:
-                msg = f'🎮 [{messages[0]}] заходит в игру'
+                msg = f'[{messages[0]}] заходит в игру'
             case glob.codes.guild_events.SIGNED_OFF:
-                msg = f'🚪 [{messages[0]}] выходит из игры'
+                msg = f'[{messages[0]}] выходит из игры'
             case glob.codes.guild_events.JOINED:
-                msg = f'🤝 [{messages[0]}] вступил в гильдию'
+                msg = f'[{messages[0]}] вступил в гильдию'
             case glob.codes.guild_events.LEFT:
-                msg = f'👋 [{messages[0]}] покинул гильдию'
+                msg = f'[{messages[0]}] покинул гильдию'
             case glob.codes.guild_events.PROMOTED:
-                msg = f'⬆️ [{messages[0]}] повысил [{messages[1]}] до звания {messages[2]}'
+                msg = f'[{messages[0]}] повысил [{messages[1]}] до звания {messages[2]}'
             case glob.codes.guild_events.DEMOTED:
-                msg = f'⬇️ [{messages[0]}] понизил [{messages[1]}] до звания {messages[2]}'
+                msg = f'[{messages[0]}] понизил [{messages[1]}] до звания {messages[2]}'
             case glob.codes.guild_events.REMOVED:
-                msg = f'🚫 [{messages[1]}] исключил [{messages[0]}] из гильдии'
+                msg = f'[{messages[1]}] исключил [{messages[0]}] из гильдии'
             case glob.codes.guild_events.MOTD:
                 msg = f'Сообщение дня гильдии: {messages[0]}'
             case _:

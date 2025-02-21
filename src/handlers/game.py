@@ -345,17 +345,6 @@ class GamePacketHandler(PacketHandler):
         out_data = int.to_bytes(counter, 4, 'little') + int.to_bytes(uptime, 4, 'little')
         self.out_queue.put_nowait(Packet(glob.codes.client_headers.TIME_SYNC_RESP, out_data))
 
-    @staticmethod
-    def handle_achievement_event(guid, achievement_id):
-        if not glob.guild:
-            glob.logger.error('Received achievement event, but not in guild')
-            return
-        player = glob.guild.roster.get(guid)
-        if not player:
-            glob.logger.error(f'Received achievement event, but no player with guid {guid} in roster')
-            return
-        # TODO send discord notification (player.name, achievement_id)
-
     def handle_CALENDAR_SEND_CALENDAR(self, data):
         for event_id in data.get_calendar_event_ids():
             self.out_queue.put_nowait(

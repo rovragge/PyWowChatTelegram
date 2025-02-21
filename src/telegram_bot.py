@@ -12,12 +12,11 @@ from src.database import Database
 
 class TelegramBot:
     LINK_PATTERN = re.compile(
-        r"\|c(?P<color>[0-9a-fA-F]{6,8})"  # Цвет ссылки
-        r"\|H(?P<type>\w+):"  # Тип ссылки
-        r"(?P<id>\d+)"  # ID объекта
-        r"(?::[0-9A-Fa-f:-]*)?"  # Необязательная часть с шестнадцатеричными значениями
-        r"\|h\[(?P<text>[^\]]+)\]"  # Отображаемый текст ссылки
-        r"\|h\|r"  # Завершающая часть
+        r"\|c(?P<color>[\da-fA-F]{6,8})"  # link color
+        r"\|H(?P<type>\w+)"  # link type
+        r":(?P<id>\d+).*"  # id and optional part
+        r"\|h\[(?P<text>.+)]"  # link text
+        r"\|h\|r"  # terminator
     )
 
     def __init__(self, out_queue):

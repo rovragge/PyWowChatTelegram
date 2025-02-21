@@ -65,6 +65,7 @@ class TelegramBot:
         # Разбиваем полное сообщение на части длиной max_length символов
         parts = [full_message[i:i + max_length] for i in range(0, len(full_message), max_length)]
 
+        glob.logger.info(f"Sending message to WoW in {len(parts)} parts: {full_message}")
         for part in parts:
             msg = ChatMessage()
             msg.channel = glob.codes.chat_channels.GUILD
@@ -181,6 +182,8 @@ class TelegramBot:
             # Получаем данные ссылки
             link_text = match.group("text")  # видимый текст ссылки
             link_type = match.group("type")
+            if link_type in ('trade', 'enchant'):
+                link_type = 'spell'
             obj_id = match.group("id")
             # Экранируем видимый текст ссылки (но НЕ квадратные скобки, которые формируют разметку)
             escaped_link_text = self.escape_markdown(f"[{link_text}]")

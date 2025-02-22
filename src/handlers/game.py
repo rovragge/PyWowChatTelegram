@@ -199,7 +199,7 @@ class GamePacketHandler(PacketHandler):
         if not message:
             return
         if not glob.maps.get(message.channel):
-            glob.logger.debug(f'Message from unhandled channel: {message.channel}')
+            glob.logger.debug(f'Message from unhandled channel [{message.channel}]: {message.text}')
             return
         if message.channel == glob.codes.chat_channels.SYSTEM:
             if message.text.startswith('|c'):

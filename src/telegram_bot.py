@@ -162,10 +162,11 @@ class TelegramBot:
         pass
 
     async def handle_GUILD_EVENT(self, data):
+        formatted_text = f"🔔 *{data}* 🔔"
         await self.application.bot.send_message(
             chat_id=self.chat_id,
             message_thread_id=self.message_thread_id,
-            text=data,
+            text=formatted_text,
             disable_notification=True
         )
 

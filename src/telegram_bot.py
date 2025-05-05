@@ -144,7 +144,7 @@ class TelegramBot:
             message_text = None
 
         if message_text:
-            await self.application.bot.send_message(
+            await self.safe_send_message(
                 chat_id=self.chat_id,
                 message_thread_id=self.message_thread_id,
                 text=message_text,
@@ -163,13 +163,29 @@ class TelegramBot:
 
     async def handle_GUILD_EVENT(self, data):
         formatted_text = f"🔔 *{self.escape_markdown(data)}* 🔔"
-        await self.application.bot.send_message(
+        await self.safe_send_message(
             chat_id=self.chat_id,
             message_thread_id=self.message_thread_id,
             text=formatted_text,
             disable_notification=True,
             parse_mode='MarkdownV2'
         )
+
+    async def safe_send_message(self, **kwargs):
+        from telegram.error import RetryAfter, TimedOut, NetworkError
+        import asyncio
+        try:
+            return await self.application.bot.send_message(**kwargs)
+        except RetryAfter as e:
+            glob.logger.warning(f"Rate limit: sleep {e.retry_after}s")
+            await asyncio.sleep(e.retry_after)
+            return await self.safe_send_message(**kwargs)
+        except (TimedOut, NetworkError) as e:
+            glob.logger.error(f"Telegram network error: {e}, message dropped")
+            return None
+        except Exception as e:
+            glob.logger.exception(f"Unexpected error in send_message: {e}")
+            return None
 
     def parse_links_and_escape_markdown(self, text: str) -> str:
         """

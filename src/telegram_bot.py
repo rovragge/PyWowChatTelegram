@@ -1,7 +1,9 @@
+import asyncio
 import re
 import emoji
 
 from telegram import Update
+from telegram.error import RetryAfter, TimedOut, NetworkError
 from telegram.ext import Application, ContextTypes, filters, MessageHandler, CommandHandler
 
 from src.common.WowData import WowData
@@ -61,9 +63,17 @@ class TelegramBot:
         demojized_text = emoji.demojize(update.effective_message.text, language='ru')
         full_message = f'<{nickname}> {demojized_text}'
 
+        parts = []
         max_length = 116
-        # Разбиваем полное сообщение на части длиной max_length символов
-        parts = [full_message[i:i + max_length] for i in range(0, len(full_message), max_length)]
+        for line in full_message.splitlines():
+            line = line.strip()
+            if not line:
+                continue  # Пропускаем пустые строки
+            while len(line) > max_length:
+                parts.append(line[:max_length])
+                line = line[max_length:]
+            if line:
+                parts.append(line)
 
         glob.logger.info(f"Sending message to WoW in {len(parts)} parts: {full_message}")
         for part in parts:
@@ -172,8 +182,6 @@ class TelegramBot:
         )
 
     async def safe_send_message(self, **kwargs):
-        from telegram.error import RetryAfter, TimedOut, NetworkError
-        import asyncio
         try:
             return await self.application.bot.send_message(**kwargs)
         except RetryAfter as e:
